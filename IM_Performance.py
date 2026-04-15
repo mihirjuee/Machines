@@ -6,7 +6,20 @@ from scipy.optimize import fsolve
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="Induction Motor Load Analysis", layout="wide")
 
-st.title("⚡ Induction Motor Performance: Load-Driven Analysis")
+# --- HEADER WITH LOGO ---
+col1, col2 = st.columns([1, 5]) # Adjust ratio based on logo shape
+
+with col1:
+    # Try to load local file, fallback to a URL or Icon if missing
+    try:
+        st.image("logo.png", width=100) 
+    except:
+        st.header("⚡") # Fallback icon
+
+with col2:
+    st.title("Induction Motor Performance: Load-Driven Analysis")
+
+st.divider()
 
 # --- SIDEBAR ---
 st.sidebar.header("🕹️ Motor Parameters")
