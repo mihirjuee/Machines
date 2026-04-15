@@ -10,112 +10,73 @@ st.title("⚡ Induction Motor Performance Analysis")
 # --- SIDEBAR ---
 st.sidebar.header("🕹️ Motor Parameters")
 
-V = st.sidebar.slider("Supply Voltage (V)", 100, 500, 400)
+V = st.sidebar.slider("Supply Voltage (Line-to-Line V)", 100, 500, 400)
 f = st.sidebar.slider("Frequency (Hz)", 10, 100, 50)
 P = st.sidebar.selectbox("Poles", [2, 4, 6, 8], index=1)
 
-R1 = st.sidebar.slider("Stator Resistance R1 (Ω)", 0.1, 5.0, 0.5)
+R1 = st.sidebar.slider("Stator Resistance R1 (Ω)", 0.01, 5.0, 0.5)
 X1 = st.sidebar.slider("Stator Reactance X1 (Ω)", 0.1, 5.0, 1.0)
 
-R2 = st.sidebar.slider("Rotor Resistance R2 (Ω)", 0.1, 5.0, 0.8)
+R2 = st.sidebar.slider("Rotor Resistance R2 (Ω)", 0.01, 5.0, 0.8)
 X2 = st.sidebar.slider("Rotor Reactance X2 (Ω)", 0.1, 5.0, 1.2)
 
 Xm = st.sidebar.slider("Magnetizing Reactance Xm (Ω)", 5.0, 100.0, 30.0)
 
-slip = st.sidebar.slider("Slip (s)", 0.001, 1.0, 0.05)
+slip_op = st.sidebar.slider("Operating Slip (s)", 0.001, 1.0, 0.05)
 
 # --- CALCULATIONS ---
-
-# Synchronous speed
+V_phase = V / np.sqrt(3)
 Ns = 120 * f / P
+omega_s = (2 * np.pi * Ns) / 60
 
-# Rotor speed
-Nr = Ns * (1 - slip)
+# Thevenin Equivalent for Torque Curve Accuracy
+V_th = V_phase * (Xm / np.sqrt(R1**2 + (X1 + Xm)**2))
+Z_th = ((1j * Xm) * (R1 + 1j * X1)) / (R1 + 1j * (X1 + Xm))
+R_th = Z_th.real
+X_th = Z_th.imag
 
-# Equivalent circuit calculations
-Z1 = R1 + 1j * X1
-Z2 = (R2 / slip) + 1j * X2
-Zm = 1j * Xm
+def calculate_torque(s_val):
+    # Standard Torque Equation
+    num = 3 * V_th**2 * (R2 / s_val)
+    den = omega_s * ((R_th + R2/s_val)**2 + (X_th + X2)**2)
+    return num
 
-# Parallel branch
-Zp = (Zm * Z2) / (Zm + Z2)
+# Generate Curve Data
+s_range = np.linspace(0.001, 1, 500)
+T_curve = calculate_torque(s_range)
+T_max_val = np.max(T_curve)
 
-# Total impedance
-Z_total = Z1 + Zp
+# Operating Point
+T_operating = calculate_torque(slip_op)
 
-# Current
-I1 = V / Z_total
+# --- PLOTTING ---
+fig, ax = plt.subplots(figsize=(10, 5))
 
-# Power factor
-pf = np.cos(np.angle(I1))
+# Plot the curve
+ax.plot(s_range, T_curve, color='#1E88E5', lw=2.5, label="Torque-Slip Curve")
 
-# Input power
-Pin = np.sqrt(3) * V * abs(I1) * pf
+# Highlight Operating Point
+ax.scatter(slip_op, T_operating, color='red', s=100, zorder=5, label=f"Operating Point (s={slip_op})")
+ax.annotate(f"  {T_operating:.1f} Nm", (slip_op, T_operating), fontweight='bold')
 
-# Air-gap power
-Pag = 3 * (abs(I1)**2) * (R2 / slip)
+# Visual regions
+ax.axvspan(0, 0.1, color='green', alpha=0.1, label="Stable Region")
+ax.axhline(calculate_torque(1.0), color='orange', ls='--', alpha=0.7, label="Starting Torque")
 
-# Mechanical power
-Pm = Pag * (1 - slip)
-
-# Output power (approx)
-Pout = Pm
-
-# Torque
-omega_s = 2 * np.pi * Ns / 60
-T = Pag / omega_s
-
-# Efficiency
-eff = (Pout / Pin) * 100
-
-# --- TORQUE-SLIP CURVE ---
-s = np.linspace(0.001, 1, 400)
-T_curve = (s * V**2 * R2) / (R2**2 + (s * X2)**2)
-T_curve = T_curve / max(T_curve)
-
-T_op = (slip * V**2 * R2) / (R2**2 + (slip * X2)**2)
-T_op = T_op / max(T_curve)
-
-fig, ax = plt.subplots()
-ax.plot(s, T_curve, label="Torque-Slip Curve")
-ax.scatter(slip, T_op)
-ax.text(slip, T_op, "  Operating Point")
-
-ax.set_xlabel("Slip")
-ax.set_ylabel("Torque (pu)")
-ax.set_title("Torque-Slip Characteristic")
-ax.grid()
+# Formatting
+ax.set_xlabel("Slip (s)")
+ax.set_ylabel("Torque (Nm)")
+ax.set_title("Induction Motor Torque-Slip Characteristics", fontsize=14)
+ax.invert_xaxis()  # Slip 0 (left) to Slip 1 (right) is standard convention
+ax.grid(True, which='both', linestyle='--', alpha=0.5)
+ax.legend()
 
 st.pyplot(fig)
 
 # --- DASHBOARD ---
+# (Keep your existing dashboard metrics code here)
 st.subheader("📊 Performance Results")
-
 col1, col2, col3 = st.columns(3)
-
-col1.metric("Synchronous Speed", f"{Ns:.1f} RPM")
-col2.metric("Rotor Speed", f"{Nr:.1f} RPM")
-col3.metric("Slip", f"{slip:.3f}")
-
-col4, col5, col6 = st.columns(3)
-
-col4.metric("Input Power", f"{Pin/1000:.2f} kW")
-col5.metric("Output Power", f"{Pout/1000:.2f} kW")
-col6.metric("Efficiency", f"{eff:.2f} %")
-
-col7, col8, col9 = st.columns(3)
-
-col7.metric("Torque", f"{T:.2f} Nm")
-col8.metric("Power Factor", f"{pf:.2f}")
-col9.metric("Stator Current", f"{abs(I1):.2f} A")
-
-# --- THEORY ---
-st.divider()
-st.info("""
-**Understanding Performance:**
-
-- Slip ↑ → Torque ↑ (initially), then decreases  
-- Maximum torque occurs when R2 = sX2  
-- Efficiency is highest at low slip  
-- Rotor copper loss = s × Air-gap power  
-""")
+col1.metric("Synchronous Speed", f"{Ns:.0f} RPM")
+col2.metric("Operating Torque", f"{T_operating:.2f} Nm")
+col3.metric("Max Torque", f"{T_max_val:.2f} Nm")
