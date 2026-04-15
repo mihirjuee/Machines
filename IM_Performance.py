@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import fsolve
 
 # --- PAGE CONFIG ---
-st.set_page_config(page_title="Induction Motor Load Analysis", layout="wide")
+st.set_page_config(page_title="Induction Motor Load Analysis", page_icon="logo.png", layout="wide")
 
 # --- HEADER WITH LOGO ---
 col1, col2 = st.columns([1, 5]) # Adjust ratio based on logo shape
