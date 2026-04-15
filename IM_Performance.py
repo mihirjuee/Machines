@@ -1,20 +1,18 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.optimize import fsolve
+from scipy.optimize import fminbound
 
 # --- PAGE CONFIG ---
-st.set_page_config(page_title="Induction Motor Load Analysis", page_icon="logo.png", layout="wide")
+st.set_page_config(page_title="Induction Motor Load Analysis", page_icon="⚡", layout="wide")
 
 # --- HEADER WITH LOGO ---
-col1, col2 = st.columns([1, 5]) # Adjust ratio based on logo shape
-
+col1, col2 = st.columns([1, 5])
 with col1:
-    # Try to load local file, fallback to a URL or Icon if missing
     try:
         st.image("logo.png", width=100) 
     except:
-        st.header("⚡") # Fallback icon
+        st.header("⚡")
 
 with col2:
     st.title("Induction Motor Performance: Load-Driven Analysis")
@@ -44,7 +42,6 @@ Z_th = ((1j * Xm) * (R1 + 1j * X1)) / (R1 + 1j * (X1 + Xm))
 R_th, X_th = Z_th.real, Z_th.imag
 
 def get_motor_metrics(s):
-    # Avoid division by zero
     s = np.clip(s, 0.0001, 1.0)
     denom_t = omega_s * ((R_th + R2/s)**2 + (X_th + X2)**2)
     torque = (3 * V_th**2 * R2 / s) / denom_t
@@ -54,55 +51,49 @@ def get_motor_metrics(s):
     I1 = V_phase / abs(R1 + 1j*X1 + Zp)
     return torque, I1
 
-# Calculate Max Torque to set the slider limit
-s_range_temp = np.linspace(0.001, 1, 500)
-T_range_temp, _ = get_motor_metrics(s_range_temp)
-max_torque_possible = float(np.max(T_range_temp))
+# Pre-calculate curve to find breakdown slip
+s_range_calc = np.linspace(0.0001, 1.0, 500)
+T_range_calc, _ = get_motor_metrics(s_range_calc)
+max_torque_possible = float(np.max(T_range_calc))
+s_at_max_t = s_range_calc[np.argmax(T_range_calc)]
 
 st.sidebar.divider()
 st.sidebar.header("⚖️ Applied Load")
-load_torque = st.sidebar.slider("Applied Load Torque (Nm)", 0.0, round(max_torque_possible, 1), 50.0)
+# Cap load torque to breakdown torque - small margin to ensure stability
+load_torque = st.sidebar.slider("Applied Load Torque (Nm)", 0.0, round(max_torque_possible - 0.1, 1), 50.0)
 
-# --- FIND OPERATING SLIP ---
-# We solve: get_motor_metrics(s)[0] - load_torque = 0
-def solve_slip(s):
+# --- FIND OPERATING SLIP (STABLE REGION ONLY) ---
+def objective_func(s):
     t, _ = get_motor_metrics(s)
-    return t - load_torque
+    return abs(t - (load_torque + 0.05)) # Adding tiny friction offset for no-load stability
 
-# Search in the stable region (0 to slip at max torque)
-operating_slip = fsolve(solve_slip, x0=0.02)[0]
+# Search only between s=0.0001 and s_at_max_t (The Stable Motoring Region)
+operating_slip = fminbound(objective_func, 0.0001, s_at_max_t)
 operating_torque, operating_current = get_motor_metrics(operating_slip)
+rotor_speed = Ns * (1 - operating_slip)
 
 # --- PLOTTING ---
-s_range = np.linspace(0.001, 1.0, 500)
+s_range = np.linspace(0.0001, 1.0, 500)
 T_curve, I_curve = get_motor_metrics(s_range)
 
 fig, ax1 = plt.subplots(figsize=(10, 5))
 ax2 = ax1.twinx()
 
-# Plot Torque & Current
-ax1.plot(s_range, T_curve, 'r-', lw=2, label="Motor Torque Output")
+ax1.plot(s_range, T_curve, 'r-', lw=2, label="Motor Torque")
 ax2.plot(s_range, I_curve, 'b--', lw=1.5, label="Stator Current")
+ax1.axhline(load_torque, color='green', ls=':', label="Load Line")
 
-# Plot Load Line
-ax1.axhline(load_torque, color='green', ls=':', label="Load Torque Line")
-
-# Operating Point Marker
+# Operating Point
 ax1.scatter(operating_slip, operating_torque, color='black', s=80, zorder=5)
 ax1.annotate(f'Operating Point\ns={operating_slip:.4f}', (operating_slip, operating_torque), 
              xytext=(operating_slip+0.1, operating_torque+20), 
              arrowprops=dict(arrowstyle='->', color='black'))
 
-# Formatting (Textbook Style: 1 to 0)
-ax1.set_xlim(1.0, 0)
-ax1.set_xlabel("Slip ($s$)", fontsize=12)
-ax1.set_ylabel("Torque (Nm)", color='r', fontsize=12)
-ax1.tick_params(axis='y', labelcolor='r')
-ax2.set_ylabel("Current (A)", color='b', fontsize=12)
-ax2.tick_params(axis='y', labelcolor='b')
+ax1.set_xlim(1.0, 0) # Textbook view: Start at s=1 (left) to s=0 (right)
+ax1.set_xlabel("Slip ($s$)")
+ax1.set_ylabel("Torque (Nm)", color='r')
+ax2.set_ylabel("Current (A)", color='b')
 ax1.grid(True, linestyle=':', alpha=0.6)
-ax1.set_title("Load-Dependent Performance Characteristics", fontsize=14)
-
 st.pyplot(fig)
 
 # --- DASHBOARD ---
@@ -110,11 +101,10 @@ st.subheader("📊 Performance Results")
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Sync Speed", f"{Ns:.0f} RPM")
 c2.metric("Resulting Slip", f"{operating_slip:.4f}")
-c3.metric("Rotor Speed", f"{Ns*(1-operating_slip):.1f} RPM")
+c3.metric("Rotor Speed", f"{max(0, rotor_speed):.1f} RPM")
 c4.metric("Current", f"{operating_current:.2f} A")
 
-# Power & Efficiency
-# Pin = 3 * V_ph * I_stator * cos(phi)
+# Efficiency and PF logic
 Zr_op = (R2/operating_slip) + 1j*X2
 Zp_op = (1j*Xm * Zr_op) / (1j*Xm + Zr_op)
 Z_total = R1 + 1j*X1 + Zp_op
