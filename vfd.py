@@ -1,101 +1,142 @@
 import streamlit as st
+import plotly.graph_objects as go
 import numpy as np
-import matplotlib.pyplot as plt
 
-# --- PAGE CONFIG ---
-st.set_page_config(page_title="VFD Simulator - Induction Motor", layout="wide")
-
-# --- TITLE ---
-st.title("⚡ Variable Frequency Drive (VFD) Simulation")
-st.markdown("Control motor **speed using frequency** and observe torque behavior.")
-
-# --- SIDEBAR ---
-st.sidebar.header("🎛️ VFD Control")
-
-f = st.sidebar.slider("Frequency (Hz)", 1, 60, 50)
-poles = st.sidebar.selectbox("Number of Poles", [2, 4, 6, 8], index=1)
-rated_speed = st.sidebar.number_input("Rated Speed (RPM)", value=1440)
-
-st.sidebar.markdown("---")
-st.sidebar.header("⚙️ Load Control")
-
-load = st.sidebar.slider("Load Torque (%)", 0, 150, 50)
-
-# --- CALCULATIONS ---
-
-# Synchronous speed
-Ns = 120 * f / poles
-
-# Assume small slip for realism
-slip = 0.04 + (load / 100) * 0.05
-
-# Rotor speed
-N = Ns * (1 - slip)
-
-# Torque (simplified model)
-torque = load * (f / 50)
-
-# --- DISPLAY VALUES ---
-st.subheader("📊 Motor Performance")
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.metric("Synchronous Speed (RPM)", f"{Ns:.0f}")
-
-with col2:
-    st.metric("Rotor Speed (RPM)", f"{N:.0f}")
-
-with col3:
-    st.metric("Torque (Relative)", f"{torque:.1f} %")
-
-# --- GRAPH: SPEED VS FREQUENCY ---
-freq_range = np.linspace(1, 60, 100)
-Ns_range = 120 * freq_range / poles
-speed_range = Ns_range * (1 - slip)
-
-fig1, ax1 = plt.subplots()
-ax1.plot(freq_range, speed_range)
-ax1.set_xlabel("Frequency (Hz)")
-ax1.set_ylabel("Speed (RPM)")
-ax1.set_title("Speed vs Frequency")
-ax1.grid()
-
-st.pyplot(fig1)
-
-# --- GRAPH: TORQUE VS SPEED ---
-speed_vals = np.linspace(0.1, Ns, 100)
-slip_vals = (Ns - speed_vals) / Ns
-
-# Simplified torque-slip relation
-T = (slip_vals) / (0.1 + slip_vals**2)
-
-fig2, ax2 = plt.subplots()
-ax2.plot(speed_vals, T)
-ax2.set_xlabel("Speed (RPM)")
-ax2.set_ylabel("Torque")
-ax2.set_title("Torque vs Speed Characteristic")
-ax2.grid()
-
-st.pyplot(fig2)
-
-# --- INFO SECTION ---
-st.markdown("---")
+# --- Page Config & Styling ---
+st.set_page_config(page_title="Learn EE Interactive Lab", layout="wide")
 
 st.markdown("""
-### 🔍 Observations:
+    <style>
+    .main { background-color: #f5f7f9; }
+    .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; border: 1px solid #ddd; }
+    </style>
+    """, unsafe_allow_html=True)
 
-- Increasing **frequency** increases motor **speed**
-- Torque remains nearly constant in V/f control
-- At low frequency, torque reduces due to voltage drop
-- Slip increases with load
+# --- Gauge Component Function ---
+def draw_analog_meter(value, min_v, max_v, title, unit, color):
+    fig = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=value,
+        number={'font': {'size': 20, 'color': "black"}, 'suffix': f" {unit}"},
+        title={'text': title, 'font': {'size': 18}},
+        gauge={
+            'axis': {'range': [min_v, max_v], 'tickwidth': 1, 'tickcolor': "black"},
+            'bar': {'color': color},
+            'bgcolor': "white",
+            'borderwidth': 2,
+            'bordercolor': "#333",
+            'steps': [
+                {'range': [0, max_v * 0.7], 'color': "#e8f5e9"},
+                {'range': [max_v * 0.7, max_v * 0.9], 'color': "#fff3e0"},
+                {'range': [max_v * 0.9, max_v], 'color': "#ffebee"}
+            ],
+            'threshold': {
+                'line': {'color': "red", 'width': 4},
+                'thickness': 0.75,
+                'value': value
+            }
+        }
+    ))
+    fig.update_layout(height=280, margin=dict(l=30, r=30, t=40, b=20))
+    return fig
 
-### ⚙️ Applications of VFD:
+# --- App Header ---
+st.title("🔬 Virtual Machines Lab: No-Load Test")
+st.write("Perform the no-load test on a 3-phase Induction Motor to determine rotational losses.")
 
-- Energy saving
-- Soft starting of motors
-- Speed control in industries
-""")
+# --- Sidebar Controls ---
+with st.sidebar:
+    st.header("🔌 Control Bench")
+    v_line = st.slider("Variac Output (Line Voltage V₀)", 0, 440, 415, step=5)
+    
+    st.divider()
+    st.subheader("Machine Nameplate")
+    p_rated = st.number_input("Rated Power (kW)", value=5.5)
+    f_supply = st.number_input("Frequency (Hz)", value=50)
+    st.info("Note: No-load current is typically 30-40% of rated current.")
 
-# --- FOOTER ---
-st.info("⚡ This simulation demonstrates basic VFD control of a 3-phase induction motor.")
+# --- Physics Engine (No-Load Calculation) ---
+# Parameters for a typical 7.5HP / 5.5kW Motor
+R1 = 0.8        # Stator resistance per phase
+Xm = 110        # Magnetizing reactance
+Rc = 950        # Core loss resistance (representing iron losses)
+friction_loss = 150 # Watts (Mechanical loss)
+
+if v_line > 0:
+    v_phase = v_line / np.sqrt(3)
+    
+    # Current components
+    i_core = v_phase / Rc
+    i_mag = v_phase / Xm
+    i_no_load = np.sqrt(i_core**2 + i_mag**2) # Line current (No-load)
+    
+    # Power calculations
+    p_core = 3 * (i_core**2) * Rc
+    p_cu_nl = 3 * (i_no_load**2) * R1
+    p_total = p_core + friction_loss + p_cu_nl
+    
+    # Phase angle for Two-Wattmeter logic
+    pf_no_load = p_total / (np.sqrt(3) * v_line * i_no_load)
+    phi = np.arccos(pf_no_load)
+    
+    # Two Wattmeter Readings
+    # W1 = Vl*Il*cos(30 + phi), W2 = Vl*Il*cos(30 - phi)
+    w1 = v_line * i_no_load * np.cos(np.radians(30) + phi)
+    w2 = v_line * i_no_load * np.cos(np.radians(30) - phi)
+else:
+    i_no_load = w1 = w2 = p_total = pf_no_load = 0
+
+# --- Dashboard Layout ---
+tab1, tab2 = st.tabs(["📊 Meter Panel", "🔌 Connection Diagram"])
+
+with tab1:
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.plotly_chart(draw_analog_meter(v_line, 0, 500, "Voltmeter (V₀)", "V", "#2196F3"), use_container_width=True)
+    
+    with col2:
+        st.plotly_chart(draw_analog_meter(i_no_load, 0, 15, "Ammeter (I₀)", "A", "#F44336"), use_container_width=True)
+        
+    with col3:
+        # Combined Wattmeter Reading
+        st.plotly_chart(draw_analog_meter(w1 + w2, 0, 2000, "Total Power (W₀)", "W", "#4CAF50"), use_container_width=True)
+
+    st.divider()
+    
+    # Detailed Wattmeter Readings (Crucial for Lab reports)
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Wattmeter 1 (W₁)", f"{w1:.2f} W")
+    c2.metric("Wattmeter 2 (W₂)", f"{w2:.2f} W")
+    c3.metric("Power Factor (cos φ₀)", f"{pf_no_load:.3f}")
+
+with tab2:
+    st.subheader("Circuit Schematic: Two-Wattmeter Method")
+    st.write("""
+    **Connection Instructions:**
+    1. Connect **Ammeter** in series with Line R.
+    2. Connect **Voltmeter** across Line R and Line Y.
+    3. **W1:** Current coil in Line R, Potential coil across R and B.
+    4. **W2:** Current coil in Line Y, Potential coil across Y and B.
+    """)
+    # Diagram placeholder (In a real app, you would use st.image() here)
+    st.warning("⚠️ High Voltage Area: Ensure Variac is at zero before starting simulation.")
+
+# --- Data Logger ---
+st.subheader("📋 Observed Data Table")
+if 'log' not in st.session_state:
+    st.session_state.log = []
+
+if st.button("Log Data Point"):
+    st.session_state.log.append({
+        "Voltage (V)": v_line,
+        "Current (A)": round(i_no_load, 2),
+        "W1 (W)": round(w1, 1),
+        "W2 (W)": round(w2, 1),
+        "Total P (W)": round(w1 + w2, 1)
+    })
+
+if st.session_state.log:
+    st.table(st.session_state.log)
+    if st.button("Clear Table"):
+        st.session_state.log = []
