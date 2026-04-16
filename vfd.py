@@ -3,82 +3,76 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # --- PAGE CONFIG ---
-st.set_page_config(page_title="VFD Simulation", layout="wide")
+st.set_page_config(page_title="Phasor Diagram", layout="wide")
 
-st.title("⚡ Induction Motor VFD Simulation (Speed Control)")
+st.title("⚡ Interactive Phasor Diagram (3-Phase Induction Motor)")
 
-st.markdown("Control motor using **speed input** and observe **torque behavior**.")
+st.markdown("Adjust **Power Factor** and **Load** to visualize phasor changes.")
 
 # --- SIDEBAR ---
-st.sidebar.header("⚙️ Motor Parameters")
+st.sidebar.header("⚙️ Controls")
 
-f_rated = st.sidebar.slider("Rated Frequency (Hz)", 40, 60, 50)
-V_rated = st.sidebar.slider("Rated Voltage (V)", 200, 500, 400)
-poles = st.sidebar.selectbox("Number of Poles", [2, 4, 6, 8], index=1)
+pf = st.sidebar.slider("Power Factor", 0.1, 1.0, 0.8, 0.01)
+pf_type = st.sidebar.selectbox("Power Factor Type", ["Lagging", "Leading"])
 
-# Frequency range
-f = np.linspace(5, f_rated, 100)
+load = st.sidebar.slider("Load (%)", 0, 150, 100)
 
-# Synchronous speed
-Ns = (120 * f) / poles  # RPM
+# --- CALCULATIONS ---
+phi = np.arccos(pf)
 
-# --- USER SPEED INPUT ---
-N_input = st.sidebar.slider("Set Motor Speed (RPM)", 100, int(max(Ns)), 1400)
+if pf_type == "Leading":
+    phi = -phi
 
-# --- CALCULATE SLIP ---
-# Using rated frequency synchronous speed for reference
-Ns_rated = (120 * f_rated) / poles
-slip = (Ns_rated - N_input) / Ns_rated
+# Voltage reference
+V = 1  # per unit
 
-# Limit slip
-slip = max(0.001, min(slip, 1))
+# Current magnitude depends on load
+I_mag = load / 100
 
-# --- V/f CONTROL ---
-V = V_rated * (f / f_rated)
+# Phasors
+V_phasor = V * np.exp(1j * 0)
+I_phasor = I_mag * np.exp(-1j * phi)
 
-# --- TORQUE MODEL ---
-T = (V**2 / (f**2 + 1e-6)) * slip
-T = T / np.max(T)
+# --- PLOT ---
+fig, ax = plt.subplots(figsize=(6,6))
 
-# --- ACTUAL SPEED CURVE ---
-N_actual = Ns * (1 - slip)
+# Draw axes
+ax.axhline(0)
+ax.axvline(0)
 
-# --- PLOTS ---
+# Voltage vector
+ax.quiver(0, 0, np.real(V_phasor), np.imag(V_phasor),
+          angles='xy', scale_units='xy', scale=1, label='Voltage (V)')
+
+# Current vector
+ax.quiver(0, 0, np.real(I_phasor), np.imag(I_phasor),
+          angles='xy', scale_units='xy', scale=1, label='Current (I)')
+
+# Formatting
+ax.set_xlim(-1.5, 1.5)
+ax.set_ylim(-1.5, 1.5)
+ax.set_aspect('equal')
+ax.grid()
+ax.set_title("Phasor Diagram")
+ax.legend()
+
+st.pyplot(fig)
+
+# --- DISPLAY VALUES ---
+st.subheader("📊 Values")
+
 col1, col2 = st.columns(2)
 
 with col1:
-    fig1, ax1 = plt.subplots()
-    ax1.plot(f, N_actual, label="Motor Speed")
-    ax1.axhline(N_input, linestyle="--", label="Selected Speed")
-    ax1.set_title("Speed vs Frequency")
-    ax1.set_xlabel("Frequency (Hz)")
-    ax1.set_ylabel("Speed (RPM)")
-    ax1.grid()
-    ax1.legend()
-    st.pyplot(fig1)
+    st.metric("Power Factor", f"{pf:.2f}")
 
 with col2:
-    fig2, ax2 = plt.subplots()
-    ax2.plot(f, T)
-    ax2.set_title("Torque vs Frequency")
-    ax2.set_xlabel("Frequency (Hz)")
-    ax2.set_ylabel("Torque (pu)")
-    ax2.grid()
-    st.pyplot(fig2)
-
-# --- METRICS ---
-st.subheader("📊 Key Results")
-
-col3, col4 = st.columns(2)
-
-with col3:
-    st.metric("Calculated Slip", f"{slip:.3f}")
-
-with col4:
-    st.metric("Rated Synchronous Speed", f"{Ns_rated:.0f} RPM")
+    st.metric("Phase Angle (°)", f"{np.degrees(phi):.1f}")
 
 # --- INSIGHT ---
 st.info("""
-⚡ Speed control is achieved by adjusting frequency using VFD.
-Slip is automatically adjusted based on load and selected speed.
+⚡ Voltage is taken as reference.
+⚡ Current lags in inductive load (lagging PF).
+⚡ Current leads in capacitive load (leading PF).
+⚡ Increasing load increases current magnitude.
 """)
