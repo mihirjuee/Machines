@@ -130,26 +130,54 @@ st.divider()
 st.subheader("Current Connection: Two-Wattmeter Method")
 st.write("The diagram below shows how the motor is currently wired to the measurement bench.")
 
-# --- Connection Diagram (SAFE: no triple quote issues) ---
-st.markdown("### 🔌 Connection Diagram (Two-Wattmeter Method)")
+import streamlit as st
 
-st.code("""
-      R -------- Ammeter ---------┐
-                                 │
-      Y --------------------------┼------ 3Φ Induction Motor
-                                 │
-      B --------------------------┘
+def render_connection_diagram():
+    """Renders a realistic, color-coded 3-phase connection diagram."""
+    
+    svg_diag = """
+    <div style="background-color: white; padding: 20px; border-radius: 10px; border: 1px solid #ddd; text-align: center;">
+        <svg width="800" height="400" viewBox="0 0 800 400">
+            <text x="20" y="55" font-family="Arial" font-weight="bold" fill="red">R</text>
+            <text x="20" y="155" font-family="Arial" font-weight="bold" fill="#FFD700">Y</text>
+            <text x="20" y="255" font-family="Arial" font-weight="bold" fill="blue">B</text>
 
-      Wattmeter W1:
-      Current Coil → Line R
-      Pressure Coil → R-Y
+            <line x1="40" y1="50" x2="100" y2="50" stroke="red" stroke-width="3"/>
+            <rect x="100" y="30" width="60" height="40" rx="5" fill="#333"/>
+            <text x="115" y="55" fill="white" font-family="Arial" font-size="12">AMM</text>
+            <line x1="160" y1="50" x2="250" y2="50" stroke="red" stroke-width="3"/>
+            
+            <rect x="250" y="30" width="80" height="60" rx="5" fill="#f4f4f4" stroke="#333" stroke-width="2"/>
+            <text x="275" y="55" fill="black" font-family="Arial" font-weight="bold">W1</text>
+            <circle cx="290" cy="80" r="4" fill="red"/> <line x1="330" y1="50" x2="600" y2="50" stroke="red" stroke-width="3"/>
 
-      Wattmeter W2:
-      Current Coil → Line B
-      Pressure Coil → B-Y
+            <line x1="40" y1="150" x2="600" y2="150" stroke="#FFD700" stroke-width="3"/>
 
-      Voltmeter → Across Line Voltage
-""")
+            <line x1="40" y1="250" x2="250" y2="250" stroke="blue" stroke-width="3"/>
+            <rect x="250" y="230" width="80" height="60" rx="5" fill="#f4f4f4" stroke="#333" stroke-width="2"/>
+            <text x="275" y="255" fill="black" font-family="Arial" font-weight="bold">W2</text>
+            <circle cx="290" cy="240" r="4" fill="blue"/> <line x1="330" y1="250" x2="600" y2="250" stroke="blue" stroke-width="3"/>
+
+            <line x1="290" y1="80" x2="290" y2="150" stroke="red" stroke-width="2" stroke-dasharray="5,5"/>
+            <line x1="290" y1="240" x2="290" y2="150" stroke="blue" stroke-width="2" stroke-dasharray="5,5"/>
+
+            <rect x="60" y="80" width="30" height="40" rx="3" fill="#555"/>
+            <text x="68" y="105" fill="white" font-size="10">V</text>
+            <line x1="75" y1="50" x2="75" y2="80" stroke="red" stroke-width="2"/>
+            <line x1="75" y1="120" x2="75" y2="150" stroke="#FFD700" stroke-width="2"/>
+
+            <rect x="600" y="30" width="150" height="250" rx="15" fill="#888" stroke="#333" stroke-width="4"/>
+            <rect x="620" y="50" width="110" height="210" rx="5" fill="#aaa" /> <circle cx="750" cy="155" r="15" fill="#444"/> <text x="635" y="280" font-family="Arial" font-weight="bold" font-size="14">IM 3Ф</text>
+            
+            <rect x="580" y="100" width="40" height="100" fill="#cc7a00" stroke="#333"/>
+            <circle cx="600" cy="120" r="5" fill="gold"/> <circle cx="600" cy="150" r="5" fill="gold"/> <circle cx="600" cy="180" r="5" fill="gold"/> </svg>
+    </div>
+    """
+    return st.markdown(svg_diag, unsafe_allow_html=True)
+
+# To display it in your app:
+st.subheader("Physical Wiring Diagram")
+render_connection_diagram()
 
 # --- Calculated Results ---
 st.subheader("📊 Calculated Parameters")
