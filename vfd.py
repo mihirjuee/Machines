@@ -59,22 +59,19 @@ with st.sidebar:
     
     st.markdown("---")
     st.header("Manual Variac Control")
-    # This slider drives the visual Variac knob
     v_input = st.slider("Rotate Knob", 0, 480, 415, step=1)
 
 # --- Physics Engine: No-Load Logic ---
-# Representative motor parameters
-Rc = 1000  # Core loss resistance
-Xm = 120   # Magnetizing reactance
+Rc = 1000  
+Xm = 120   
 v_phase = v_input / np.sqrt(3)
 
 if v_phase > 0:
     i_core = v_phase / Rc
     i_mag = v_phase / Xm
-    i_0 = np.sqrt(i_core**2 + i_mag**2) # No-load current
-    p_0 = 3 * (i_core**2) * Rc          # No-load power
+    i_0 = np.sqrt(i_core**2 + i_mag**2) 
+    p_0 = 3 * (i_core**2) * Rc          
     
-    # Simulate Two-Wattmeter readings
     phi_0 = np.arccos(i_core / i_0)
     w1 = v_input * i_0 * np.cos(np.radians(30) + phi_0)
     w2 = v_input * i_0 * np.cos(np.radians(30) - phi_0)
@@ -86,9 +83,7 @@ col_variac, col_meters = st.columns([1, 2])
 
 with col_variac:
     st.markdown('<div class="variac-container">', unsafe_allow_html=True)
-    
-    # Corrected SVG logic (No single curly braces)
-    rotation = (v_input / 480) * 270 # 270 degree sweep
+    rotation = (v_input / 480) * 270 
     
     svg_variac = f"""
     <svg width="180" height="180" viewBox="0 0 100 100">
@@ -117,101 +112,70 @@ with col_meters:
         st.plotly_chart(create_gauge(w1 + w2, 0, 1500, "Total Wattmeter", "Watts (W)", "#2ca02c"), use_container_width=True)
     with m_col2:
         st.plotly_chart(create_gauge(i_0, 0, i_rated, "Ammeter", "Amps (A)", "#d62728"), use_container_width=True)
-        
-        # Display individual wattmeters
         st.info("### Wattmeter Readings")
         st.write(f"**W1:** {w1:.2f} W")
         st.write(f"**W2:** {w2:.2f} W")
-        st.write(f"**Combined:** {w1+w2:.2f} W")
 
 st.divider()
 
-# --- Connection Visual ---
-st.subheader("Current Connection: Two-Wattmeter Method")
-st.write("The diagram below shows how the motor is currently wired to the measurement bench.")
-
-import streamlit as st
-
+# --- Realistic Connection Diagram Function ---
 def render_connection_diagram():
-    """Renders a realistic, color-coded 3-phase connection diagram."""
-    
     svg_diag = """
     <div style="background-color: white; padding: 20px; border-radius: 10px; border: 1px solid #ddd; text-align: center;">
-        <svg width="800" height="400" viewBox="0 0 800 400">
-            <text x="20" y="55" font-family="Arial" font-weight="bold" fill="red">R</text>
-            <text x="20" y="155" font-family="Arial" font-weight="bold" fill="#FFD700">Y</text>
-            <text x="20" y="255" font-family="Arial" font-weight="bold" fill="blue">B</text>
+        <svg width="100%" height="auto" viewBox="0 0 800 350" preserveAspectRatio="xMidYMid meet">
+            <text x="10" y="55" font-family="Arial" font-weight="bold" fill="red">R</text>
+            <text x="10" y="155" font-family="Arial" font-weight="bold" fill="#FFD700">Y</text>
+            <text x="10" y="255" font-family="Arial" font-weight="bold" fill="blue">B</text>
 
-            <line x1="40" y1="50" x2="100" y2="50" stroke="red" stroke-width="3"/>
-            <rect x="100" y="30" width="60" height="40" rx="5" fill="#333"/>
-            <text x="115" y="55" fill="white" font-family="Arial" font-size="12">AMM</text>
-            <line x1="160" y1="50" x2="250" y2="50" stroke="red" stroke-width="3"/>
-            
-            <rect x="250" y="30" width="80" height="60" rx="5" fill="#f4f4f4" stroke="#333" stroke-width="2"/>
-            <text x="275" y="55" fill="black" font-family="Arial" font-weight="bold">W1</text>
-            <circle cx="290" cy="80" r="4" fill="red"/> <line x1="330" y1="50" x2="600" y2="50" stroke="red" stroke-width="3"/>
+            <line x1="30" y1="50" x2="80" y2="50" stroke="red" stroke-width="3"/>
+            <rect x="80" y="30" width="50" height="40" rx="5" fill="#333"/>
+            <text x="88" y="55" fill="white" font-family="Arial" font-size="10">AMM</text>
+            <line x1="130" y1="50" x2="180" y2="50" stroke="red" stroke-width="3"/>
+            <rect x="180" y="25" width="70" height="50" rx="5" fill="#f4f4f4" stroke="#333" stroke-width="2"/>
+            <text x="205" y="55" fill="black" font-family="Arial" font-weight="bold">W1</text>
+            <circle cx="215" cy="75" r="4" fill="red"/> 
+            <line x1="250" y1="50" x2="600" y2="50" stroke="red" stroke-width="3"/>
 
-            <line x1="40" y1="150" x2="600" y2="150" stroke="#FFD700" stroke-width="3"/>
+            <line x1="30" y1="150" x2="600" y2="150" stroke="#FFD700" stroke-width="3"/>
 
-            <line x1="40" y1="250" x2="250" y2="250" stroke="blue" stroke-width="3"/>
-            <rect x="250" y="230" width="80" height="60" rx="5" fill="#f4f4f4" stroke="#333" stroke-width="2"/>
-            <text x="275" y="255" fill="black" font-family="Arial" font-weight="bold">W2</text>
-            <circle cx="290" cy="240" r="4" fill="blue"/> <line x1="330" y1="250" x2="600" y2="250" stroke="blue" stroke-width="3"/>
+            <line x1="30" y1="250" x2="180" y2="250" stroke="blue" stroke-width="3"/>
+            <rect x="180" y="225" width="70" height="50" rx="5" fill="#f4f4f4" stroke="#333" stroke-width="2"/>
+            <text x="205" y="255" fill="black" font-family="Arial" font-weight="bold">W2</text>
+            <circle cx="215" cy="225" r="4" fill="blue"/>
+            <line x1="250" y1="250" x2="600" y2="250" stroke="blue" stroke-width="3"/>
 
-            <line x1="290" y1="80" x2="290" y2="150" stroke="red" stroke-width="2" stroke-dasharray="5,5"/>
-            <line x1="290" y1="240" x2="290" y2="150" stroke="blue" stroke-width="2" stroke-dasharray="5,5"/>
+            <line x1="215" y1="75" x2="215" y2="150" stroke="red" stroke-width="2" stroke-dasharray="5,5"/>
+            <line x1="215" y1="225" x2="215" y2="150" stroke="blue" stroke-width="2" stroke-dasharray="5,5"/>
 
-            <rect x="60" y="80" width="30" height="40" rx="3" fill="#555"/>
-            <text x="68" y="105" fill="white" font-size="10">V</text>
-            <line x1="75" y1="50" x2="75" y2="80" stroke="red" stroke-width="2"/>
-            <line x1="75" y1="120" x2="75" y2="150" stroke="#FFD700" stroke-width="2"/>
+            <rect x="40" y="80" width="30" height="40" rx="3" fill="#555"/>
+            <text x="48" y="105" fill="white" font-size="10">V</text>
+            <line x1="55" y1="50" x2="55" y2="80" stroke="red" stroke-width="2"/>
+            <line x1="55" y1="120" x2="55" y2="150" stroke="#FFD700" stroke-width="2"/>
 
-            <rect x="600" y="30" width="150" height="250" rx="15" fill="#888" stroke="#333" stroke-width="4"/>
-            <rect x="620" y="50" width="110" height="210" rx="5" fill="#aaa" /> <circle cx="750" cy="155" r="15" fill="#444"/> <text x="635" y="280" font-family="Arial" font-weight="bold" font-size="14">IM 3Ф</text>
-            
-            <rect x="580" y="100" width="40" height="100" fill="#cc7a00" stroke="#333"/>
-            <circle cx="600" cy="120" r="5" fill="gold"/> <circle cx="600" cy="150" r="5" fill="gold"/> <circle cx="600" cy="180" r="5" fill="gold"/> </svg>
+            <rect x="600" y="40" width="140" height="230" rx="10" fill="#777" stroke="#333" stroke-width="3"/>
+            <rect x="615" y="60" width="110" height="190" rx="5" fill="#999" />
+            <text x="635" y="290" font-family="Arial" font-weight="bold">3Ф MOTOR</text>
+        </svg>
     </div>
     """
-    return st.markdown(svg_diag, unsafe_allow_html=True)
+    st.markdown(svg_diag, unsafe_allow_html=True)
 
-# To display it in your app:
-st.subheader("Physical Wiring Diagram")
+st.subheader("🛠️ Experimental Connection Diagram")
 render_connection_diagram()
 
-# --- Calculated Results ---
-st.subheader("📊 Calculated Parameters")
+# --- Results & Table ---
+st.divider()
+pf = (w1 + w2) / (np.sqrt(3) * v_input * i_0) if (v_input > 0 and i_0 > 0) else 0
 
-pf = 0
-if v_input > 0 and i_0 > 0:
-    pf = (w1 + w2) / (np.sqrt(3) * v_input * i_0)
+st.subheader("📊 Test Results")
+c1, c2, c3 = st.columns(3)
+c1.metric("Current (I₀)", f"{i_0:.3f} A")
+c2.metric("Total Power (P₀)", f"{(w1+w2):.2f} W")
+c3.metric("Power Factor", f"{pf:.3f}")
 
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.metric("No-Load Current", f"{i_0:.3f} A")
-
-with col2:
-    st.metric("Total Power", f"{(w1+w2):.2f} W")
-
-with col3:
-    st.metric("Power Factor", f"{pf:.3f}")
-
-# --- Warning ---
-if pf < 0.2 and v_input > 0:
-    st.warning("⚠️ Very low power factor — normal at no-load condition")
-
-# --- Data Table ---
-st.subheader("📋 Test Data Log")
-
-data = {
+st.table({
     "Voltage (V)": [v_input],
     "Current (A)": [round(i_0, 3)],
     "Power (W)": [round(w1 + w2, 2)],
     "Power Factor": [round(pf, 3)]
-}
-
-st.table(data)
-
-# --- Footer ---
-st.info("⚡ This virtual lab simulates the no-load test of a 3-phase induction motor using the two-wattmeter method.")
+})
