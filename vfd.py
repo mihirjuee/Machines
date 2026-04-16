@@ -129,3 +129,61 @@ st.divider()
 # --- Connection Visual ---
 st.subheader("Current Connection: Two-Wattmeter Method")
 st.write("The diagram below shows how the motor is currently wired to the measurement bench.")
+
+# --- Connection Diagram (SAFE: no triple quote issues) ---
+st.markdown("### 🔌 Connection Diagram (Two-Wattmeter Method)")
+
+st.code("""
+      R -------- Ammeter ---------┐
+                                 │
+      Y --------------------------┼------ 3Φ Induction Motor
+                                 │
+      B --------------------------┘
+
+      Wattmeter W1:
+      Current Coil → Line R
+      Pressure Coil → R-Y
+
+      Wattmeter W2:
+      Current Coil → Line B
+      Pressure Coil → B-Y
+
+      Voltmeter → Across Line Voltage
+""")
+
+# --- Calculated Results ---
+st.subheader("📊 Calculated Parameters")
+
+pf = 0
+if v_input > 0 and i_0 > 0:
+    pf = (w1 + w2) / (np.sqrt(3) * v_input * i_0)
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.metric("No-Load Current", f"{i_0:.3f} A")
+
+with col2:
+    st.metric("Total Power", f"{(w1+w2):.2f} W")
+
+with col3:
+    st.metric("Power Factor", f"{pf:.3f}")
+
+# --- Warning ---
+if pf < 0.2 and v_input > 0:
+    st.warning("⚠️ Very low power factor — normal at no-load condition")
+
+# --- Data Table ---
+st.subheader("📋 Test Data Log")
+
+data = {
+    "Voltage (V)": [v_input],
+    "Current (A)": [round(i_0, 3)],
+    "Power (W)": [round(w1 + w2, 2)],
+    "Power Factor": [round(pf, 3)]
+}
+
+st.table(data)
+
+# --- Footer ---
+st.info("⚡ This virtual lab simulates the no-load test of a 3-phase induction motor using the two-wattmeter method.")
