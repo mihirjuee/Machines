@@ -1,61 +1,26 @@
-import streamlit as st
-import numpy as np
 import plotly.graph_objects as go
 
-# --- PAGE CONFIG ---
-st.set_page_config(page_title="Virtual Lab - No Load Test", layout="wide")
-
-st.title("⚡ 3-Phase Induction Motor Virtual Lab")
-
-st.markdown("### 🔌 No-Load Test Setup with Virtual Instruments")
-
-# --- SIDEBAR INPUTS ---
-st.sidebar.header("⚙️ Supply & Motor")
-
-V = st.sidebar.slider("Line Voltage (V)", 200, 500, 400)
-I = st.sidebar.slider("No-load Current (A)", 1.0, 20.0, 5.0)
-P = st.sidebar.slider("Wattmeter Reading (W)", 100, 5000, 800)
-
-# --- CALCULATIONS ---
-pf = P / (np.sqrt(3) * V * I)
-pf = min(pf, 1)
-
-# --- GAUGE FUNCTION ---
-def gauge(title, value, max_val):
+def create_meter(value, min_val, max_val, unit, title, color):
     fig = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=value,
-        title={'text': title},
-        gauge={
-            'axis': {'range': [0, max_val]},
+        mode = "gauge+number",
+        value = value,
+        title = {'text': f"{title} ({unit})"},
+        gauge = {
+            'axis': {'range': [min_val, max_val]},
+            'bar': {'color': color},
+            'steps': [
+                {'range': [min_val, max_val*0.8], 'color': "lightgray"},
+                {'range': [max_val*0.8, max_val], 'color': "red"}
+            ],
+            'threshold': {
+                'line': {'color': "black", 'width': 4},
+                'thickness': 0.75,
+                'value': value
+            }
         }
     ))
+    fig.update_layout(height=250, margin=dict(l=20, r=20, t=50, b=20))
     return fig
 
-# --- DISPLAY METERS ---
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.plotly_chart(gauge("Voltmeter (V)", V, 500), use_container_width=True)
-
-with col2:
-    st.plotly_chart(gauge("Ammeter (A)", I, 20), use_container_width=True)
-
-with col3:
-    st.plotly_chart(gauge("Wattmeter (W)", P, 5000), use_container_width=True)
-
-# --- RESULTS ---
-st.subheader("📊 Calculated Values")
-
-col4, col5 = st.columns(2)
-
-with col4:
-    st.metric("Power Factor", f"{pf:.3f}")
-
-with col5:
-    st.metric("Input Power", f"{P:.2f} W")
-
-# --- CONNECTION DIAGRAM (SIMPLIFIED TEXT) ---
-st.subheader("🔌 Connection Diagram (Conceptual)")
-
-st.markdown("""
+# Example usage in Streamlit:
+# st.plotly_chart(create_meter(415, 0, 500, "V", "Line Voltage", "blue"))
