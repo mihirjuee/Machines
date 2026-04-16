@@ -1,78 +1,65 @@
 import streamlit as st
 import numpy as np
-import matplotlib.pyplot as plt
 
 # --- PAGE CONFIG ---
-st.set_page_config(page_title="Phasor Diagram", layout="wide")
+st.set_page_config(page_title="No Load Test", layout="wide")
 
-st.title("⚡ Interactive Phasor Diagram (3-Phase Induction Motor)")
+st.title("⚡ No-Load Test of 3-Phase Induction Motor")
 
-st.markdown("Adjust **Power Factor** and **Load** to visualize phasor changes.")
+st.markdown("Simulate the **No-Load Test** and calculate losses and current components.")
 
-# --- SIDEBAR ---
-st.sidebar.header("⚙️ Controls")
+# --- SIDEBAR INPUTS ---
+st.sidebar.header("⚙️ Input Parameters")
 
-pf = st.sidebar.slider("Power Factor", 0.1, 1.0, 0.8, 0.01)
-pf_type = st.sidebar.selectbox("Power Factor Type", ["Lagging", "Leading"])
-
-load = st.sidebar.slider("Load (%)", 0, 150, 100)
+V = st.sidebar.slider("Line Voltage (V)", 200, 500, 400)
+I0 = st.sidebar.slider("No-load Current (A)", 1.0, 20.0, 5.0)
+pf = st.sidebar.slider("Power Factor (cosφ₀)", 0.1, 1.0, 0.3)
 
 # --- CALCULATIONS ---
+
+# Input Power
+P0 = np.sqrt(3) * V * I0 * pf
+
+# Current components
 phi = np.arccos(pf)
+Iw = I0 * pf            # working component
+Im = I0 * np.sin(phi)   # magnetizing component
 
-if pf_type == "Leading":
-    phi = -phi
+# Assume stator copper loss (approx)
+R1 = 1.0   # ohm (assumed)
+stator_cu_loss = 3 * (I0**2) * R1
 
-# Voltage reference
-V = 1  # per unit
+# Core + mechanical loss
+core_mech_loss = P0 - stator_cu_loss
 
-# Current magnitude depends on load
-I_mag = load / 100
+# --- DISPLAY RESULTS ---
+st.subheader("📊 Results")
 
-# Phasors
-V_phasor = V * np.exp(1j * 0)
-I_phasor = I_mag * np.exp(-1j * phi)
-
-# --- PLOT ---
-fig, ax = plt.subplots(figsize=(6,6))
-
-# Draw axes
-ax.axhline(0)
-ax.axvline(0)
-
-# Voltage vector
-ax.quiver(0, 0, np.real(V_phasor), np.imag(V_phasor),
-          angles='xy', scale_units='xy', scale=1, label='Voltage (V)')
-
-# Current vector
-ax.quiver(0, 0, np.real(I_phasor), np.imag(I_phasor),
-          angles='xy', scale_units='xy', scale=1, label='Current (I)')
-
-# Formatting
-ax.set_xlim(-1.5, 1.5)
-ax.set_ylim(-1.5, 1.5)
-ax.set_aspect('equal')
-ax.grid()
-ax.set_title("Phasor Diagram")
-ax.legend()
-
-st.pyplot(fig)
-
-# --- DISPLAY VALUES ---
-st.subheader("📊 Values")
-
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.metric("Power Factor", f"{pf:.2f}")
+    st.metric("Input Power P₀", f"{P0:.2f} W")
 
 with col2:
-    st.metric("Phase Angle (°)", f"{np.degrees(phi):.1f}")
+    st.metric("Working Current (Iw)", f"{Iw:.2f} A")
+
+with col3:
+    st.metric("Magnetizing Current (Im)", f"{Im:.2f} A")
+
+st.subheader("⚡ Loss Analysis")
+
+col4, col5 = st.columns(2)
+
+with col4:
+    st.metric("Stator Copper Loss", f"{stator_cu_loss:.2f} W")
+
+with col5:
+    st.metric("Core + Mechanical Loss", f"{core_mech_loss:.2f} W")
 
 # --- INSIGHT ---
 st.info("""
-⚡ Voltage is taken as reference.
-⚡ Current lags in inductive load (lagging PF).
-⚡ Current leads in capacitive load (leading PF).
-⚡ Increasing load increases current magnitude.
+⚡ At no-load:
+- Power factor is low
+- Current is mostly magnetizing
+- Input power represents core + mechanical losses
 """)
