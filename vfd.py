@@ -1,142 +1,137 @@
 import streamlit as st
-import plotly.graph_objects as go
 import numpy as np
 
-# --- Page Config & Styling ---
-st.set_page_config(page_title="Learn EE Interactive Lab", layout="wide")
+# --- Page Configuration ---
+st.set_page_config(page_title="Learn EE Interactive - No-Load Test", layout="wide")
 
+# Custom CSS for styling components
 st.markdown("""
     <style>
-    .main { background-color: #f5f7f9; }
-    .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; border: 1px solid #ddd; }
+    .variac-container {
+        border: 2px solid #333;
+        border-radius: 10px;
+        background-color: #f0f0f0;
+        padding: 20px;
+        text-align: center;
+        width: 100%;
+        max-width: 400px;
+        margin: auto;
+    }
+    .meter-box {
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+    .phase-label { font-weight: bold; font-size: 1.2em; margin-bottom: 5px;}
+    .readout { font-family: 'Courier New', Courier, monospace; font-size: 2.5em; font-weight: bold; color: blue;}
     </style>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-# --- Gauge Component Function ---
-def draw_analog_meter(value, min_v, max_v, title, unit, color):
-    fig = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=value,
-        number={'font': {'size': 20, 'color': "black"}, 'suffix': f" {unit}"},
-        title={'text': title, 'font': {'size': 18}},
-        gauge={
-            'axis': {'range': [min_v, max_v], 'tickwidth': 1, 'tickcolor': "black"},
-            'bar': {'color': color},
-            'bgcolor': "white",
-            'borderwidth': 2,
-            'bordercolor': "#333",
-            'steps': [
-                {'range': [0, max_v * 0.7], 'color': "#e8f5e9"},
-                {'range': [max_v * 0.7, max_v * 0.9], 'color': "#fff3e0"},
-                {'range': [max_v * 0.9, max_v], 'color': "#ffebee"}
-            ],
-            'threshold': {
-                'line': {'color': "red", 'width': 4},
-                'thickness': 0.75,
-                'value': value
-            }
-        }
-    ))
-    fig.update_layout(height=280, margin=dict(l=30, r=30, t=40, b=20))
-    return fig
 
-# --- App Header ---
-st.title("🔬 Virtual Machines Lab: No-Load Test")
-st.write("Perform the no-load test on a 3-phase Induction Motor to determine rotational losses.")
+# --- Define the Dynamic Variac Component (SVG based) ---
+def render_dynamic_variac(voltage):
+    """Generates an HTML snippet containing an SVG Variac knob that rotates."""
+    
+    # Calculate knob rotation angle (0V = 0 degrees, 480V = ~300 degrees)
+    # The scale on Variacs typically covers ~300 degrees.
+    max_voltage = 480
+    rotation_angle = (voltage / max_voltage) * 300 
 
-# --- Sidebar Controls ---
-with st.sidebar:
-    st.header("🔌 Control Bench")
-    v_line = st.slider("Variac Output (Line Voltage V₀)", 0, 440, 415, step=5)
-    
-    st.divider()
-    st.subheader("Machine Nameplate")
-    p_rated = st.number_input("Rated Power (kW)", value=5.5)
-    f_supply = st.number_input("Frequency (Hz)", value=50)
-    st.info("Note: No-load current is typically 30-40% of rated current.")
+    svg_code = f"""
+    <div class="variac-container">
+        <h3>Variac Control</h3>
+        <svg width="200" height="200" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="45" fill="none" stroke="#ddd" stroke-width="2"/>
+            
+            <g stroke="#333" stroke-width="1">
+                <line x1="50" y1="5" x2="50" y2="10"/> <line x1="10" y1="50" x2="15" y2="50"/> <line x1="90" y1="50" x2="85" y2="50"/> }
+            </g>
+            
+            <g transform="rotate({rotation_angle} 50 50)">
+                <circle cx="50" cy="50" r="30" fill="#333" stroke="#222" stroke-width="2"/>
+                <circle cx="30" cy="50" r="2" fill="#555"/>
+                <circle cx="50" cy="30" r="2" fill="#555"/>
+                <circle cx="70" cy="50" r="2" fill="#555"/>
+                <circle cx="50" cy="70" r="2" fill="#555"/>
+                
+                <line x1="50" y1="30" x2="50" y2="10" stroke="red" stroke-width="3" stroke-linecap="round"/>
+            </g>
+            
+            <text x="50" y="55" text-anchor="middle" font-size="6" font-family="Arial" fill="#ddd">VARIAC</text>
+        </svg>
+        <div style="font-size: 1.5em; font-weight: bold;">{voltage} V</div>
+        <div style="font-size: 0.8em; color: gray;">0V - {max_voltage}V AC Output</div>
+    </div>
+    """
+    return st.markdown(svg_code, unsafe_allow_html=True)
 
-# --- Physics Engine (No-Load Calculation) ---
-# Parameters for a typical 7.5HP / 5.5kW Motor
-R1 = 0.8        # Stator resistance per phase
-Xm = 110        # Magnetizing reactance
-Rc = 950        # Core loss resistance (representing iron losses)
-friction_loss = 150 # Watts (Mechanical loss)
-
-if v_line > 0:
-    v_phase = v_line / np.sqrt(3)
-    
-    # Current components
-    i_core = v_phase / Rc
-    i_mag = v_phase / Xm
-    i_no_load = np.sqrt(i_core**2 + i_mag**2) # Line current (No-load)
-    
-    # Power calculations
-    p_core = 3 * (i_core**2) * Rc
-    p_cu_nl = 3 * (i_no_load**2) * R1
-    p_total = p_core + friction_loss + p_cu_nl
-    
-    # Phase angle for Two-Wattmeter logic
-    pf_no_load = p_total / (np.sqrt(3) * v_line * i_no_load)
-    phi = np.arccos(pf_no_load)
-    
-    # Two Wattmeter Readings
-    # W1 = Vl*Il*cos(30 + phi), W2 = Vl*Il*cos(30 - phi)
-    w1 = v_line * i_no_load * np.cos(np.radians(30) + phi)
-    w2 = v_line * i_no_load * np.cos(np.radians(30) - phi)
-else:
-    i_no_load = w1 = w2 = p_total = pf_no_load = 0
 
 # --- Dashboard Layout ---
-tab1, tab2 = st.tabs(["📊 Meter Panel", "🔌 Connection Diagram"])
+st.title("⚡ 3-Phase Induction Motor: Interactive No-Load Test")
+st.markdown("Use the controls on the left to vary the supply voltage and observe the motor's behavior.")
 
-with tab1:
-    col1, col2, col3 = st.columns(3)
+# --- Sidebar Inputs (Simulation Parameters) ---
+with st.sidebar:
+    st.header("Simulation Control Panel")
     
-    with col1:
-        st.plotly_chart(draw_analog_meter(v_line, 0, 500, "Voltmeter (V₀)", "V", "#2196F3"), use_container_width=True)
+    # Machine Specifications (Text inputs for customization)
+    st.subheader("Motor Rated Values")
+    v_rated = st.number_input("Rated Line Voltage (V)", value=415)
+    i_rated = st.number_input("Rated Current (A)", value=10.0)
+    p_rated = st.number_input("Rated Power (kW)", value=5.5)
     
-    with col2:
-        st.plotly_chart(draw_analog_meter(i_no_load, 0, 15, "Ammeter (I₀)", "A", "#F44336"), use_container_width=True)
+    st.markdown("---")
+    
+    # **THIS IS THE MASTER SLIDER CONTROLLING VOLTAGE**
+    st.subheader("Voltage Adjustment")
+    v_input = st.slider("Select Output Voltage", 0, 480, 415, step=5, help="Controls the output of the 3-phase Variac.")
+
+# --- Render the Realistic components ---
+col1, col2 = st.columns([1, 2])
+
+# Left Column: The Interactive Variac
+with col1:
+    # We call the function, passing the slider value.
+    # The SVG redraws and rotates the knob automatically when v_input changes.
+    render_dynamic_variac(v_input)
+
+# Right Column: The Machine & Meters (Simplified placeholder for this demo)
+with col2:
+    st.subheader("Motor Connection & Measurement Bench")
+    
+    # Mathematical Model Logic (Simple model)
+    # Realistic parameters for a ~5.5kW motor
+    X_m = 150  # Magnetizing Reactance (Ohms)
+    R_core = 1200 # Core Loss Resistance (Ohms)
+    
+    if v_input > 0:
+        v_phase = v_input / np.sqrt(3)
+        i_core = v_phase / R_core
+        i_mag = v_phase / X_m
+        i_no_load = np.sqrt(i_core**2 + i_mag**2) # Line Current
         
-    with col3:
-        # Combined Wattmeter Reading
-        st.plotly_chart(draw_analog_meter(w1 + w2, 0, 2000, "Total Power (W₀)", "W", "#4CAF50"), use_container_width=True)
+        # Simplified LPF Wattmeter values (Two-wattmeter method simulation)
+        p_total = 3 * (i_core**2) * R_core # Core Loss + Rotation (simplified)
+        w1_sim = (p_total / 2) + (v_input * i_no_load * 0.1) # Simulate imbalance
+        w2_sim = (p_total / 2) - (v_input * i_no_load * 0.1) # Simulating potential negative/low reading
+        
+    else:
+        i_no_load = w1_sim = w2_sim = p_total = 0
 
-    st.divider()
-    
-    # Detailed Wattmeter Readings (Crucial for Lab reports)
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Wattmeter 1 (W₁)", f"{w1:.2f} W")
-    c2.metric("Wattmeter 2 (W₂)", f"{w2:.2f} W")
-    c3.metric("Power Factor (cos φ₀)", f"{pf_no_load:.3f}")
+    # Meter readouts styled with CSS
+    with st.container():
+        st.markdown('<div class="meter-box">', unsafe_allow_html=True)
+        st.markdown('<div class="phase-label">3Ф Line Current (I₀)</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="readout">{i_no_load:.2f} A</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-with tab2:
-    st.subheader("Circuit Schematic: Two-Wattmeter Method")
-    st.write("""
-    **Connection Instructions:**
-    1. Connect **Ammeter** in series with Line R.
-    2. Connect **Voltmeter** across Line R and Line Y.
-    3. **W1:** Current coil in Line R, Potential coil across R and B.
-    4. **W2:** Current coil in Line Y, Potential coil across Y and B.
-    """)
-    # Diagram placeholder (In a real app, you would use st.image() here)
-    st.warning("⚠️ High Voltage Area: Ensure Variac is at zero before starting simulation.")
+    c1, c2 = st.columns(2)
+    with c1:
+        st.metric("Wattmeter 1 (W₁)", f"{w1_sim:.1f} W", help="LPF Wattmeter simulation")
+    with c2:
+        st.metric("Wattmeter 2 (W₂)", f"{w2_sim:.1f} W", help="LPF Wattmeter simulation")
 
-# --- Data Logger ---
-st.subheader("📋 Observed Data Table")
-if 'log' not in st.session_state:
-    st.session_state.log = []
-
-if st.button("Log Data Point"):
-    st.session_state.log.append({
-        "Voltage (V)": v_line,
-        "Current (A)": round(i_no_load, 2),
-        "W1 (W)": round(w1, 1),
-        "W2 (W)": round(w2, 1),
-        "Total P (W)": round(w1 + w2, 1)
-    })
-
-if st.session_state.log:
-    st.table(st.session_state.log)
-    if st.button("Clear Table"):
-        st.session_state.log = []
+    st.success(f"Motor status: Running at {v_input}V No-Load.")
+    st.info(f"Total rotational loss determined: **{p_total:.1f} W**")
