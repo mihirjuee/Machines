@@ -1,137 +1,131 @@
 import streamlit as st
 import numpy as np
+import plotly.graph_objects as go
 
-# --- Page Configuration ---
-st.set_page_config(page_title="Learn EE Interactive - No-Load Test", layout="wide")
+# --- Page Setup ---
+st.set_page_config(page_title="Learn EE Interactive Lab", layout="wide")
 
-# Custom CSS for styling components
+# Custom CSS for the Lab Environment
 st.markdown("""
     <style>
+    .main { background-color: #f0f2f6; }
     .variac-container {
-        border: 2px solid #333;
-        border-radius: 10px;
-        background-color: #f0f0f0;
+        border: 4px solid #444;
+        border-radius: 15px;
+        background-color: #d1d1d1;
         padding: 20px;
         text-align: center;
-        width: 100%;
-        max-width: 400px;
-        margin: auto;
+        box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
     }
-    .meter-box {
-        background-color: #f9f9f9;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        padding: 10px;
-        margin-bottom: 10px;
-    }
-    .phase-label { font-weight: bold; font-size: 1.2em; margin-bottom: 5px;}
-    .readout { font-family: 'Courier New', Courier, monospace; font-size: 2.5em; font-weight: bold; color: blue;}
+    .meter-label { font-weight: bold; font-size: 1.1em; color: #333; }
     </style>
 """, unsafe_allow_html=True)
 
+# --- Real-Look Gauge Function ---
+def create_gauge(value, min_val, max_val, title, unit, color):
+    fig = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=value,
+        title={'text': f"<b>{title}</b><br><span style='font-size:0.8em'>{unit}</span>"},
+        gauge={
+            'axis': {'range': [min_val, max_val], 'tickwidth': 1},
+            'bar': {'color': color},
+            'bgcolor': "white",
+            'borderwidth': 2,
+            'bordercolor': "gray",
+            'steps': [
+                {'range': [0, max_val*0.8], 'color': "#f0f0f0"},
+                {'range': [max_val*0.8, max_val], 'color': "#ffcccc"}
+            ],
+            'threshold': {
+                'line': {'color': "red", 'width': 4},
+                'thickness': 0.75,
+                'value': value
+            }
+        }
+    ))
+    fig.update_layout(height=250, margin=dict(l=20, r=20, t=50, b=20))
+    return fig
 
-# --- Define the Dynamic Variac Component (SVG based) ---
-def render_dynamic_variac(voltage):
-    """Generates an HTML snippet containing an SVG Variac knob that rotates."""
-    
-    # Calculate knob rotation angle (0V = 0 degrees, 480V = ~300 degrees)
-    # The scale on Variacs typically covers ~300 degrees.
-    max_voltage = 480
-    rotation_angle = (voltage / max_voltage) * 300 
+# --- App Header ---
+st.title("🔌 Induction Motor No-Load Test Simulator")
+st.write("Adjust the Variac to vary the 3-phase supply voltage and observe the motor parameters.")
 
-    svg_code = f"""
-    <div class="variac-container">
-        <h3>Variac Control</h3>
-        <svg width="200" height="200" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="45" fill="none" stroke="#ddd" stroke-width="2"/>
-            
-            <g stroke="#333" stroke-width="1">
-                <line x1="50" y1="5" x2="50" y2="10"/> <line x1="10" y1="50" x2="15" y2="50"/> <line x1="90" y1="50" x2="85" y2="50"/> }
-            </g>
-            
-            <g transform="rotate({rotation_angle} 50 50)">
-                <circle cx="50" cy="50" r="30" fill="#333" stroke="#222" stroke-width="2"/>
-                <circle cx="30" cy="50" r="2" fill="#555"/>
-                <circle cx="50" cy="30" r="2" fill="#555"/>
-                <circle cx="70" cy="50" r="2" fill="#555"/>
-                <circle cx="50" cy="70" r="2" fill="#555"/>
-                
-                <line x1="50" y1="30" x2="50" y2="10" stroke="red" stroke-width="3" stroke-linecap="round"/>
-            </g>
-            
-            <text x="50" y="55" text-anchor="middle" font-size="6" font-family="Arial" fill="#ddd">VARIAC</text>
-        </svg>
-        <div style="font-size: 1.5em; font-weight: bold;">{voltage} V</div>
-        <div style="font-size: 0.8em; color: gray;">0V - {max_voltage}V AC Output</div>
-    </div>
-    """
-    return st.markdown(svg_code, unsafe_allow_html=True)
-
-
-# --- Dashboard Layout ---
-st.title("⚡ 3-Phase Induction Motor: Interactive No-Load Test")
-st.markdown("Use the controls on the left to vary the supply voltage and observe the motor's behavior.")
-
-# --- Sidebar Inputs (Simulation Parameters) ---
+# --- Sidebar Controls ---
 with st.sidebar:
-    st.header("Simulation Control Panel")
-    
-    # Machine Specifications (Text inputs for customization)
-    st.subheader("Motor Rated Values")
+    st.header("Machine Specs")
     v_rated = st.number_input("Rated Line Voltage (V)", value=415)
     i_rated = st.number_input("Rated Current (A)", value=10.0)
-    p_rated = st.number_input("Rated Power (kW)", value=5.5)
     
     st.markdown("---")
-    
-    # **THIS IS THE MASTER SLIDER CONTROLLING VOLTAGE**
-    st.subheader("Voltage Adjustment")
-    v_input = st.slider("Select Output Voltage", 0, 480, 415, step=5, help="Controls the output of the 3-phase Variac.")
+    st.header("Manual Variac Control")
+    # This slider drives the visual Variac knob
+    v_input = st.slider("Rotate Knob", 0, 480, 415, step=1)
 
-# --- Render the Realistic components ---
-col1, col2 = st.columns([1, 2])
+# --- Physics Engine: No-Load Logic ---
+# Representative motor parameters
+Rc = 1000  # Core loss resistance
+Xm = 120   # Magnetizing reactance
+v_phase = v_input / np.sqrt(3)
 
-# Left Column: The Interactive Variac
-with col1:
-    # We call the function, passing the slider value.
-    # The SVG redraws and rotates the knob automatically when v_input changes.
-    render_dynamic_variac(v_input)
+if v_phase > 0:
+    i_core = v_phase / Rc
+    i_mag = v_phase / Xm
+    i_0 = np.sqrt(i_core**2 + i_mag**2) # No-load current
+    p_0 = 3 * (i_core**2) * Rc          # No-load power
+    
+    # Simulate Two-Wattmeter readings
+    phi_0 = np.arccos(i_core / i_0)
+    w1 = v_input * i_0 * np.cos(np.radians(30) + phi_0)
+    w2 = v_input * i_0 * np.cos(np.radians(30) - phi_0)
+else:
+    i_0 = p_0 = w1 = w2 = 0
 
-# Right Column: The Machine & Meters (Simplified placeholder for this demo)
-with col2:
-    st.subheader("Motor Connection & Measurement Bench")
+# --- Layout: Variac and Meters ---
+col_variac, col_meters = st.columns([1, 2])
+
+with col_variac:
+    st.markdown('<div class="variac-container">', unsafe_allow_html=True)
     
-    # Mathematical Model Logic (Simple model)
-    # Realistic parameters for a ~5.5kW motor
-    X_m = 150  # Magnetizing Reactance (Ohms)
-    R_core = 1200 # Core Loss Resistance (Ohms)
+    # Corrected SVG logic (No single curly braces)
+    rotation = (v_input / 480) * 270 # 270 degree sweep
     
-    if v_input > 0:
-        v_phase = v_input / np.sqrt(3)
-        i_core = v_phase / R_core
-        i_mag = v_phase / X_m
-        i_no_load = np.sqrt(i_core**2 + i_mag**2) # Line Current
+    svg_variac = f"""
+    <svg width="180" height="180" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="48" fill="#555" />
+        <circle cx="50" cy="50" r="40" fill="#eee" stroke="#333" stroke-width="2"/>
+        <g stroke="#333" stroke-width="1">
+            <line x1="50" y1="10" x2="50" y2="15"/>
+            <line x1="10" y1="50" x2="15" y2="50"/>
+            <line x1="90" y1="50" x2="85" y2="50"/>
+        </g>
+        <g transform="rotate({rotation} 50 50)">
+            <circle cx="50" cy="50" r="25" fill="#222" />
+            <line x1="50" y1="50" x2="50" y2="28" stroke="red" stroke-width="4" stroke-linecap="round"/>
+        </g>
+    </svg>
+    <div style="font-size: 2em; font-weight: bold; color: #d32f2f;">{v_input} V</div>
+    <div class="meter-label">VARIAC CONTROL</div>
+    """
+    st.markdown(svg_variac, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+with col_meters:
+    m_col1, m_col2 = st.columns(2)
+    with m_col1:
+        st.plotly_chart(create_gauge(v_input, 0, 500, "Voltmeter", "Volts (V)", "#1f77b4"), use_container_width=True)
+        st.plotly_chart(create_gauge(w1 + w2, 0, 1500, "Total Wattmeter", "Watts (W)", "#2ca02c"), use_container_width=True)
+    with m_col2:
+        st.plotly_chart(create_gauge(i_0, 0, i_rated, "Ammeter", "Amps (A)", "#d62728"), use_container_width=True)
         
-        # Simplified LPF Wattmeter values (Two-wattmeter method simulation)
-        p_total = 3 * (i_core**2) * R_core # Core Loss + Rotation (simplified)
-        w1_sim = (p_total / 2) + (v_input * i_no_load * 0.1) # Simulate imbalance
-        w2_sim = (p_total / 2) - (v_input * i_no_load * 0.1) # Simulating potential negative/low reading
-        
-    else:
-        i_no_load = w1_sim = w2_sim = p_total = 0
+        # Display individual wattmeters
+        st.info("### Wattmeter Readings")
+        st.write(f"**W1:** {w1:.2f} W")
+        st.write(f"**W2:** {w2:.2f} W")
+        st.write(f"**Combined:** {w1+w2:.2f} W")
 
-    # Meter readouts styled with CSS
-    with st.container():
-        st.markdown('<div class="meter-box">', unsafe_allow_html=True)
-        st.markdown('<div class="phase-label">3Ф Line Current (I₀)</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="readout">{i_no_load:.2f} A</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+st.divider()
 
-    c1, c2 = st.columns(2)
-    with c1:
-        st.metric("Wattmeter 1 (W₁)", f"{w1_sim:.1f} W", help="LPF Wattmeter simulation")
-    with c2:
-        st.metric("Wattmeter 2 (W₂)", f"{w2_sim:.1f} W", help="LPF Wattmeter simulation")
-
-    st.success(f"Motor status: Running at {v_input}V No-Load.")
-    st.info(f"Total rotational loss determined: **{p_total:.1f} W**")
+# --- Connection Visual ---
+st.subheader("Current Connection: Two-Wattmeter Method")
+st.write("The diagram below shows how the motor is currently wired to the measurement bench.")
