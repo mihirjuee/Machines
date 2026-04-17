@@ -1,86 +1,84 @@
 import streamlit as st
 import numpy as np
-import plotly.graph_objects as go
+import matplotlib.pyplot as plt
+import schemdraw
+import schemdraw.elements as elm
 
-# --- Page Config ---
-st.set_page_config(page_title="DC Motor Simulator", layout="wide")
+# --- PAGE CONFIG ---
+st.set_page_config(page_title="DC Shunt Motor Characteristics", layout="wide")
 
-# --- Sidebar Inputs ---
-st.sidebar.header("⚡ Machine Inputs")
-v_in = st.sidebar.slider("Terminal Voltage (V)", 100, 600, 240)
-ra_in = st.sidebar.number_input("Armature Resistance (Ω)", value=0.5, step=0.1)
-rse_in = st.sidebar.number_input("Series Field Resistance (Ω)", value=0.2, step=0.1)
-kphi_in = st.sidebar.slider("Shunt Flux Constant", 1.0, 5.0, 2.0)
+st.title("⚡ DC Shunt Motor Torque-Speed Characteristics")
 
-# --- NEW: Toggle/Selection Logic ---
-st.sidebar.header("Chart Options")
-selected_motors = st.sidebar.multiselect(
-    "Select Motors to Display",
-    ["Shunt", "Series", "Cumulative Compound"],
-    default=["Shunt", "Series"]
-)
+st.write("Interactive simulation with circuit diagram.")
 
-# --- Calculations ---
-def get_data(V, Ra, Rse, Kphi):
-    Ia = np.linspace(1, 60, 100)
-    results = {}
-    
-    # Shunt
-    results["Shunt"] = {
-        "speed": (V - (Ia * Ra)) / Kphi,
-        "torque": Kphi * Ia,
-        "color": "blue"
-    }
-    
-    # Series (Phi proportional to Ia)
-    ks = Kphi / 30 
-    results["Series"] = {
-        "speed": (V - (Ia * (Ra + Rse))) / (ks * Ia),
-        "torque": ks * (Ia**2),
-        "color": "red"
-    }
-    
-    # Compound
-    phi_comp = Kphi + (ks * Ia)
-    results["Cumulative Compound"] = {
-        "speed": (V - (Ia * (Ra + Rse))) / phi_comp,
-        "torque": phi_comp * Ia,
-        "color": "green"
-    }
-    
-    return results
+# --- SIDEBAR INPUTS ---
+st.sidebar.header("🔧 Motor Parameters")
 
-data = get_data(v_in, ra_in, rse_in, kphi_in)
+V = st.sidebar.slider("Supply Voltage (V)", 100, 300, 220)
+Ra = st.sidebar.slider("Armature Resistance (Ohm)", 0.1, 2.0, 0.5)
+k = st.sidebar.slider("Motor Constant (k)", 0.1, 2.0, 0.8)
+phi = st.sidebar.slider("Flux (Φ)", 0.5, 1.5, 1.0)
 
-# --- UI Layout ---
-st.title("⚙️ DC Motor Characteristic Analyzer")
+# --- LAYOUT ---
+col1, col2 = st.columns([1, 1])
 
-fig = go.Figure()
+# =========================
+# 🔌 CIRCUIT DIAGRAM
+# =========================
+with col1:
+    st.subheader("🔌 DC Shunt Motor Circuit")
 
-# Only add traces that are selected in the sidebar
-for motor in selected_motors:
-    m_data = data[motor]
-    fig.add_trace(go.Scatter(
-        x=m_data["torque"], 
-        y=m_data["speed"], 
-        name=motor,
-        line=dict(color=m_data["color"], width=3)
-    ))
+    d = schemdraw.Drawing()
 
-fig.update_layout(
-    title=f"Speed vs. Torque ({', '.join(selected_motors)})",
-    xaxis_title="Torque (N-m)",
-    yaxis_title="Speed (rad/s)",
-    yaxis=dict(range=[0, 150]), # Adjusted for visibility
-    xaxis=dict(range=[0, 150]),
-    template="plotly_white"
-)
+    # Supply
+    d += elm.SourceV().label(f"{V} V")
 
-st.plotly_chart(fig, use_container_width=True)
+    # Top wire
+    d += elm.Line().right()
 
-# Comparison Cards
-if len(selected_motors) > 0:
-    cols = st.columns(len(selected_motors))
-    for i, motor in enumerate(selected_motors):
-        with cols[i]:
-            st.metric(f"{motor} Max Torque", f"{max(data[motor]['torque']):.1f} Nm")
+    # Branch down for field winding
+    d.push()
+    d += elm.Line().down()
+    d += elm.Resistor().label("Rsh (Field)")
+    d += elm.Line().down()
+    d += elm.Ground()
+    d.pop()
+
+    # Continue main line
+    d += elm.Resistor().label("Ra (Armature)")
+    d += elm.Motor().label("DC Motor")
+
+    # Return path
+    d += elm.Line().down()
+    d += elm.Ground()
+
+    st.pyplot(d.draw())
+
+# =========================
+# 📊 GRAPH
+# =========================
+with col2:
+    st.subheader("📊 Torque vs Speed")
+
+    T = np.linspace(0, 50, 100)
+    Ia = T / (k * phi)
+    N = (V - Ia * Ra) / (k * phi)
+
+    fig, ax = plt.subplots()
+    ax.plot(T, N, linewidth=2)
+    ax.set_xlabel("Torque (Nm)")
+    ax.set_ylabel("Speed")
+    ax.set_title("Torque-Speed Characteristic")
+    ax.grid()
+
+    st.pyplot(fig)
+
+# =========================
+# 📘 THEORY
+# =========================
+st.subheader("📘 Governing Equations")
+
+st.latex(r"T = k \phi I_a")
+st.latex(r"N = \frac{V - I_a R_a}{k \phi}")
+
+st.info("👉 DC Shunt Motor runs at nearly constant speed with varying load.")
