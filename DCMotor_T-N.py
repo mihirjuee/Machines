@@ -5,7 +5,7 @@ import schemdraw
 import schemdraw.elements as elm
 
 # --- PAGE CONFIG ---
-st.set_page_config(page_title="DC Shunt Motor Characteristics", layout="wide")
+st.set_page_config(page_title="DC Shunt Motor Characteristics",page_icon="logo.png", layout="wide")
 
 st.title("⚡ DC Shunt Motor Torque-Speed Characteristics")
 
