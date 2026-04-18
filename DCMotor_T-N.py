@@ -35,7 +35,7 @@ with col1:
     
     # Armature circuit
     d += elm.Line().right()
-    d += elm.Line().down()
+    d += elm.Line().down(length=2)
     d += elm.Resistor().label("Ra")
     d += elm.Motor().label("M")
     d += elm.Line().down()
