@@ -30,7 +30,6 @@ with col1:
     d.push()
     d += elm.Line().down(length=0.1)
     d += elm.Inductor().label("Rf")
-    d += elm.Ground()
     d.pop()
     
     # Armature circuit
@@ -38,9 +37,7 @@ with col1:
     d += elm.Line().down(length=0.1)
     d += elm.Resistor().label("Ra")
     d += elm.Motor().label("M")
-    d += elm.Line().down()
-    d += elm.Ground()
-    
+   
     # FIX: Use .fig attribute to access the Matplotlib figure directly
     st.pyplot(d.draw().fig)
 
