@@ -34,6 +34,7 @@ with col1:
     d.pop()
     
     # Armature circuit
+    d += elm.Line().down()
     d += elm.Resistor().label("Ra")
     d += elm.Motor().label("M")
     d += elm.Line().down()
