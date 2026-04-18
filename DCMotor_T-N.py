@@ -25,11 +25,12 @@ with col1:
     d = schemdraw.Drawing()
     d += elm.SourceV().label(f"{V}V")
     d += elm.Line().right(length=2)
-    
+    d += elm.Line().down(length=2)
     # Field circuit (Shunt)
     d.push()
-    d += elm.Line().down(length=0.1)
+    d += elm.Line().down(length=1)
     d += elm.Inductor().label("Rf")
+    d += elm.Line().down(length=1)
     d.pop()
     
     # Armature circuit
