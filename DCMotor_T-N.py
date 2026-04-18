@@ -45,19 +45,34 @@ with col1:
     st.pyplot(d.draw().fig)
 
 # --- GRAPH ---
+# --- REVISED REALISTIC GRAPH SECTION ---
 with col2:
-    st.subheader("📊 Torque vs Speed")
+    st.subheader("📊 Torque vs Speed (Realistic)")
     
-    T = np.linspace(0, 500, 100)
+    T = np.linspace(0, 50, 100)
     Ia = T / (k * phi)
-    N = (V - Ia * Ra) / (k * phi)
+    
+    # Introduce a simple model for armature reaction:
+    # Flux decreases as current increases
+    demag_factor = 0.005 
+    phi_eff = np.maximum(phi - (demag_factor * Ia), 0.1)
+    
+    # Speed is now calculated using the effective (reduced) flux
+    N = (V - Ia * Ra) / (k * phi_eff)
+    N = np.maximum(N, 0) # Motor doesn't go negative
 
-    fig, ax = plt.subplots()
-    ax.plot(T, N, color='tab:blue', linewidth=2)
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.plot(T, N, color='tab:red', linewidth=2.5, label='Actual (Non-linear)')
+    
+    # Plot the "Ideal" linear version for comparison
+    N_ideal = (V - Ia * Ra) / (k * phi)
+    ax.plot(T, N_ideal, color='gray', linestyle='--', label='Ideal (Linear)')
+    
     ax.set_xlabel("Torque (Nm)")
     ax.set_ylabel("Speed (RPM)")
-    ax.set_title("Speed-Torque Characteristic")
-    ax.grid(True, linestyle='--', alpha=0.7)
+    ax.set_title("DC Shunt Motor: Ideal vs. Realistic")
+    ax.grid(True, linestyle='--', alpha=0.6)
+    ax.legend()
     
     st.pyplot(fig)
 
