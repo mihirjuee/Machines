@@ -28,7 +28,7 @@ with col1:
     
     # Field circuit (Shunt)
     d.push()
-    d += elm.Line().down()
+    d += elm.Line().down(length=2)
     d += elm.Inductor().label("Rf")
     d += elm.Ground()
     d.pop()
