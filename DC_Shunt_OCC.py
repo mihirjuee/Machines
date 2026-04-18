@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # --- PAGE CONFIG ---
-st.set_page_config(page_title="Voltage Build-up Simulation", layout="wide")
+st.set_page_config(page_title="Voltage Build-up Simulation",page_icon="logo.png" layout="wide")
 
 st.title("⚡ DC Shunt Generator: Voltage Build-up")
 
