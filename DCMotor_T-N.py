@@ -23,12 +23,11 @@ col1, col2 = st.columns([1, 1])
 with col1:
     st.subheader("🔌 DC Shunt Motor Circuit")
     
-    # Use standard schemdraw approach
     d = schemdraw.Drawing()
     
-    # Define elements
-    d += (V_src := elm.SourceV().label(f"{V}V"))
-    d += elm.Line().length(d=1) # Correct syntax for length
+    # Use .right(length=1) instead of .length(d=1)
+    d += elm.SourceV().label(f"{V}V")
+    d += elm.Line().right(length=1) 
     
     # Field circuit
     d.push()
@@ -43,9 +42,8 @@ with col1:
     d += elm.Line().down()
     d += elm.Ground()
     
-    # Draw to a figure object
-    fig = d.draw() 
-    st.pyplot(fig)
+    # In newer versions, drawing is handled by the object directly
+    st.pyplot(d.draw())
 
 # --- GRAPH ---
 with col2:
