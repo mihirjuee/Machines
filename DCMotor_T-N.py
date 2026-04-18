@@ -31,7 +31,7 @@ with col1:
     d.push()
     d += elm.Line().down(length=1)
     d += elm.Inductor().label("Rf")
-    d += elm.Line().down(length=2)
+    d += elm.Line().down(length=2.1)
     d.pop()
     
     # Armature circuit
