@@ -48,7 +48,7 @@ with col1:
 with col2:
     st.subheader("📊 Torque vs Speed")
     
-    T = np.linspace(0, 100, 100)
+    T = np.linspace(0, 500, 100)
     Ia = T / (k * phi)
     N = (V - Ia * Ra) / (k * phi)
 
