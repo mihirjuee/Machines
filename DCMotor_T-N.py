@@ -99,4 +99,12 @@ st.divider()
 st.subheader("📘 Governing Equations")
 st.latex(r"T = k \phi I_a")
 st.latex(r"N = \frac{V - I_a R_a}{k \phi}")
-st.info("👉 Note: The speed decreases linearly with torque due to the armature resistance.")
+# --- Info Section ---
+st.markdown("""
+### 📘 Key Insights:
+- **Ideal Case:** Straight-line characteristic (constant flux)
+- **Real Case:** Flux weakens due to armature reaction
+- **Result:** Speed drop is less pronounced → better regulation
+
+👉 DC shunt motors are known for **nearly constant speed operation**
+""")
