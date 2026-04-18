@@ -29,8 +29,8 @@ with col1:
     d += elm.Motor().label("M")
     
     d += elm.Line().down(length=4)
-    d += elm.Line().left(length=6)
-    d += elm.Line().up(length=2)
+    d += elm.Line().left(length=10)
+    
     st.pyplot(d.draw().fig)
 
 
