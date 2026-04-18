@@ -47,7 +47,13 @@ with col1:
 # --- GRAPH ---
 with col2:
     st.sidebar.subheader("⚡ Armature Reaction")
-    demag_factor = st.sidebar.slider("Demagnetization Factor", 0.0, 0.02, 0.005)
+    demag_factor = st.sidebar.slider(
+    "Demagnetization Factor",
+    min_value=0.0,
+    max_value=0.02,
+    value=0.005,
+    step=0.001
+)
     st.subheader("📊 Torque vs Speed (Realistic)")
 
     # Torque range
