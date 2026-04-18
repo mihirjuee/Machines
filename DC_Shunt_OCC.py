@@ -8,6 +8,7 @@ st.set_page_config(page_title="Voltage Build-up Simulation", layout="wide")
 st.title("⚡ DC Shunt Generator: Voltage Build-up")
 
 # --- SIDEBAR ---
+st.sidebar.image("logo.png", use_container_width=True)
 st.sidebar.header("🔧 Generator Settings")
 
 Rf = st.sidebar.slider("Field Resistance (Ohms)", 50.0, 200.0, 100.0)
