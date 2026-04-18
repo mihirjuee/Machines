@@ -22,7 +22,6 @@ col1, col2 = st.columns([1, 1])
 with col1:
     st.subheader("🔌 DC Shunt Motor Circuit")
     
-    # Schematic of a DC Shunt Motor
     d = schemdraw.Drawing()
     d += elm.SourceV().label(f"{V}V")
     d += elm.Line().right(length=1)
@@ -40,19 +39,17 @@ with col1:
     d += elm.Line().down()
     d += elm.Ground()
     
-    st.pyplot(d.draw())
-    
+    # FIX: Use .fig attribute to access the Matplotlib figure directly
+    st.pyplot(d.draw().fig)
 
 # --- GRAPH ---
 with col2:
     st.subheader("📊 Torque vs Speed")
     
-    # Calculations
     T = np.linspace(0, 50, 100)
     Ia = T / (k * phi)
     N = (V - Ia * Ra) / (k * phi)
 
-    # Plotting
     fig, ax = plt.subplots()
     ax.plot(T, N, color='tab:blue', linewidth=2)
     ax.set_xlabel("Torque (Nm)")
@@ -67,4 +64,4 @@ st.divider()
 st.subheader("📘 Governing Equations")
 st.latex(r"T = k \phi I_a")
 st.latex(r"N = \frac{V - I_a R_a}{k \phi}")
-st.info("👉 Note: The DC Shunt motor maintains a nearly constant speed. The slight downward slope is due to the $I_a R_a$ voltage drop in the armature circuit as the load (Torque) increases.")
+st.info("👉 Note: The speed decreases linearly with torque due to the armature resistance.")
