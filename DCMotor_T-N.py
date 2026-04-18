@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import schemdraw
 import schemdraw.elements as elm
+import matplotlib
+matplotlib.use('Agg')
 
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="DC Shunt Motor Characteristics",page_icon="logo.png", layout="wide")
