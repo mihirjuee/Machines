@@ -50,4 +50,5 @@ st.markdown("""
 1.  **Residual Magnetism:** The generator must have some initial magnetism.
 2.  **Field Connection:** The field winding must be connected such that the field current **aids** the residual flux.
 3.  **Critical Resistance:** The field resistance ($R_f$) must be **less than** the critical resistance ($R_c$). If $R_f > R_c$, the resistance line will not intersect the OCC, and voltage will not build up.
-""")
+4.  **Speed of Generator:** The speed of the prime mover must be greater than the critical speed, which is the minimum speed below which the generator cannot build up voltage.
+
