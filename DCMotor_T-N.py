@@ -54,7 +54,7 @@ with col2:
     
     # Introduce a simple model for armature reaction:
     # Flux decreases as current increases
-    demag_factor = -0.005 
+    demag_factor = 0.005 
     phi_eff = np.maximum(phi - (demag_factor * Ia), 0.1)
     
     # Speed is now calculated using the effective (reduced) flux
