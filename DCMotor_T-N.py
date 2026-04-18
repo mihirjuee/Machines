@@ -52,7 +52,8 @@ with col1:
     d += elm.Line().down()
     d += elm.Ground()
 
-    st.pyplot(d.draw())
+    d.draw()          # first draw
+st.pyplot(d.fig)  # then pass figure
 
 # =========================
 # 📊 GRAPH
