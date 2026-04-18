@@ -24,12 +24,12 @@ with col1:
     
     d = schemdraw.Drawing()
     d += elm.SourceV().label(f"{V}V")
-    d += elm.Line().right(length=1)
+    d += elm.Line().right(length=2)
     
     # Field circuit (Shunt)
     d.push()
     d += elm.Line().down()
-    d += elm.Resistor().label("Rf")
+    d += elm.inductor().label("Rf")
     d += elm.Ground()
     d.pop()
     
