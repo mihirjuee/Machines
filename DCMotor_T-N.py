@@ -29,7 +29,7 @@ with col1:
     # Field circuit (Shunt)
     d.push()
     d += elm.Line().down()
-    d += elm.inductor().label("Rf")
+    d += elm.inductor().label("L")
     d += elm.Ground()
     d.pop()
     
