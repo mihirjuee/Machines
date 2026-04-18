@@ -45,49 +45,46 @@ with col1:
     st.pyplot(d.draw().fig)
 
 # --- GRAPH ---
-# --- REVISED REALISTIC GRAPH SECTION ---
 with col2:
     st.sidebar.subheader("⚡ Armature Reaction")
-demag_factor = st.sidebar.slider("Demagnetization Factor", 0.0, 0.02, 0.005)
+    demag_factor = st.sidebar.slider("Demagnetization Factor", 0.0, 0.02, 0.005)
+    st.subheader("📊 Torque vs Speed (Realistic)")
 
-# --- MAIN SECTION ---
-st.subheader("📊 Torque vs Speed (Realistic)")
+    # Torque range
+    T = np.linspace(0, 50, 100)
 
-# Torque range
-T = np.linspace(0, 50, 100)
+    # --- Iterative solution for Ia and phi_eff ---
+    Ia = T / (k * phi)  # initial guess
 
-# --- Iterative solution for Ia and phi_eff ---
-Ia = T / (k * phi)  # initial guess
+    for _ in range(5):  # iterative refinement
+        phi_eff = np.maximum(phi - demag_factor * Ia, 0.1)
+        Ia = T / (k * phi_eff)
 
-for _ in range(5):  # iterative refinement
-    phi_eff = np.maximum(phi - demag_factor * Ia, 0.1)
-    Ia = T / (k * phi_eff)
+    # Final speed calculation
+    N = (V - Ia * Ra) / (k * phi_eff)
+    N = np.maximum(N, 0)
 
-# Final speed calculation
-N = (V - Ia * Ra) / (k * phi_eff)
-N = np.maximum(N, 0)
+    # --- Ideal case (no armature reaction) ---
+    Ia_ideal = T / (k * phi)
+    N_ideal = (V - Ia_ideal * Ra) / (k * phi)
 
-# --- Ideal case (no armature reaction) ---
-Ia_ideal = T / (k * phi)
-N_ideal = (V - Ia_ideal * Ra) / (k * phi)
+    # --- Plot ---
+    fig, ax = plt.subplots(figsize=(8, 5))
 
-# --- Plot ---
-fig, ax = plt.subplots(figsize=(8, 5))
+    ax.plot(T, N, linewidth=2.5, label='Actual (With Armature Reaction)')
+    ax.plot(T, N_ideal, linestyle='--', label='Ideal (No Armature Reaction)')
 
-ax.plot(T, N, linewidth=2.5, label='Actual (With Armature Reaction)')
-ax.plot(T, N_ideal, linestyle='--', label='Ideal (No Armature Reaction)')
+    ax.set_xlabel("Torque (Nm)")
+    ax.set_ylabel("Speed (RPM)")
+    ax.set_title("DC Shunt Motor: Torque vs Speed Characteristics")
 
-ax.set_xlabel("Torque (Nm)")
-ax.set_ylabel("Speed (RPM)")
-ax.set_title("DC Shunt Motor: Torque vs Speed Characteristics")
+    ax.grid(True, linestyle='--', alpha=0.6)
+    ax.legend()
 
-ax.grid(True, linestyle='--', alpha=0.6)
-ax.legend()
+    ax.set_xlim(left=0)
+    ax.set_ylim(bottom=0)
 
-ax.set_xlim(left=0)
-ax.set_ylim(bottom=0)
-
-st.pyplot(fig)
+    st.pyplot(fig)
 
 # --- THEORY ---
 st.divider()
