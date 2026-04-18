@@ -2,49 +2,52 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="Generator Build-up", layout="wide")
-st.title("⚡ DC Shunt Generator: Voltage Build-up & Critical Speed")
+st.set_page_config(page_title="Voltage Build-up Simulation", layout="wide")
+st.title("⚡ DC Shunt Generator: Voltage Build-up")
 
 # --- PARAMETERS ---
-Rf = st.sidebar.slider("Field Resistance (Rf) (Ohms)", 50.0, 300.0, 150.0)
-rated_speed = 1500  # Rated speed in RPM
-actual_speed = st.sidebar.slider("Actual Speed (RPM)", 500, 2000, 1500)
+st.sidebar.header("Generator Settings")
+Rf = st.sidebar.slider("Field Resistance (Ohms)", 50.0, 200.0, 100.0)
+residual_v = st.sidebar.slider("Residual Voltage (V)", 1.0, 10.0, 5.0)
+speed_factor = st.sidebar.slider("Speed Ratio (Actual/Rated)", 0.5, 1.2, 1.0)
 
-# Critical speed calculation (simplified: Nc = N * (Rc / Rf))
-# For this model, let's assume Rc = 200 Ohms
-Rc = 200.0
-critical_speed = rated_speed * (Rf / Rc)
+# --- MODELING THE OCC (Saturation Curve) ---
+# We use a simple saturation model: E = (k * If) / (1 + b * If)
+k = 250.0
+b = 0.05
 
-# --- MODELING THE OCC ---
 If = np.linspace(0, 3, 100)
-# OCC varies linearly with speed (E = k * If * Speed)
-speed_ratio = actual_speed / rated_speed
-E_occ = (250 * If) / (1 + 0.05 * If) * speed_ratio + 2.0
+E_occ = (k * If) / (1 + b * If) * speed_factor + residual_v
 
+# --- SIMULATION ---
+# Calculate the resistance line
 V_field = If * Rf
+
+# Find intersection point (Voltage Build-up point)
+diff = E_occ - V_field
+idx = np.where(diff < 0)[0][0] if np.any(diff < 0) else -1
 
 # --- PLOTTING ---
 fig, ax = plt.subplots(figsize=(8, 5))
-ax.plot(If, E_occ, label=f"OCC at {actual_speed} RPM", linewidth=2)
-ax.plot(If, V_field, label=f"Field Resistance Line ({Rf}Ω)", linestyle='--')
+ax.plot(If, E_occ, label="OCC (Saturation Curve)", linewidth=2)
+ax.plot(If, V_field, label=f"Field Resistance Line (Rf={Rf}Ω)", linestyle='--')
+
+if idx != -1:
+    ax.plot(If[idx], E_occ[idx], 'ro', label=f"Final Voltage: {E_occ[idx]:.1f}V")
 
 ax.set_xlabel("Field Current (If)")
 ax.set_ylabel("Generated EMF (V)")
-ax.set_title("Voltage Build-up: Effect of Speed")
+ax.set_title("Voltage Build-up Process in DC Shunt Generator")
 ax.grid(True)
 ax.legend()
+
 st.pyplot(fig)
 
-# --- SPEED CHECK ---
+# --- THEORY ---
 st.divider()
-if actual_speed < critical_speed:
-    st.error(f"⚠️ Voltage will NOT build up! Actual speed ({actual_speed} RPM) is below Critical Speed ({int(critical_speed)} RPM).")
-else:
-    st.success(f"✅ Voltage will build up! Actual speed is above the critical speed of {int(critical_speed)} RPM.")
-
+st.subheader("📘 Key Conditions for Build-up")
 st.markdown("""
-### 📘 Understanding Critical Speed
-The **Critical Speed** is the minimum speed below which the generator cannot build up its rated voltage.
-- If **$N < N_c$**: The resistance line is steeper than the OCC, so there is no point of intersection other than zero.
-- If **$N > N_c$**: The resistance line intersects the OCC, allowing the voltage to grow until saturation.
+1.  **Residual Magnetism:** The generator must have some initial magnetism.
+2.  **Field Connection:** The field winding must be connected such that the field current **aids** the residual flux.
+3.  **Critical Resistance:** The field resistance ($R_f$) must be **less than** the critical resistance ($R_c$). If $R_f > R_c$, the resistance line will not intersect the OCC, and voltage will not build up.
 """)
