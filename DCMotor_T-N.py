@@ -52,7 +52,9 @@ with col2:
     min_value=0.0,
     max_value=0.02,
     value=0.005,
-    step=0.001
+    step=0.001,
+    format="%.3f"
+        
 )
     st.subheader("📊 Torque vs Speed (Realistic)")
 
