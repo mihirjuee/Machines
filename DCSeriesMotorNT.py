@@ -10,6 +10,7 @@ st.title("⚡ DC Series Motor Torque-Speed Characteristics")
 col1, col2 = st.columns([1, 1])
 
 # --- SIDEBAR INPUTS ---
+st.sidebar.image("logo.png", use_container_width=True)
 V = st.sidebar.slider("Supply Voltage (V)", 100, 300, 220)
 Ra_Rs = st.sidebar.slider("Total Resistance (Ra + Rs) (Ohm)", 0.1, 5.0, 1.0)
 Kt = st.sidebar.slider("Torque Constant (Kt)", 0.1, 1.0, 0.5)
@@ -29,7 +30,7 @@ with col1:
     d += elm.Motor().label("M")
     
     d += elm.Line().down(length=4)
-    d += elm.Line().left(length=10)
+    d += elm.Line().left(length=11)
     
     st.pyplot(d.draw().fig)
 
