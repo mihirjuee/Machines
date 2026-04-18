@@ -28,14 +28,14 @@ with col1:
     
     # Field circuit (Shunt)
     d.push()
-    d += elm.Line().down(length=1)
+    d += elm.Line().down(length=0.5)
     d += elm.Inductor().label("Rf")
     d += elm.Ground()
     d.pop()
     
     # Armature circuit
     d += elm.Line().right()
-    d += elm.Line().down(length=1)
+    d += elm.Line().down(length=0.5)
     d += elm.Resistor().label("Ra")
     d += elm.Motor().label("M")
     d += elm.Line().down()
