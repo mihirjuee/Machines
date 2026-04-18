@@ -36,7 +36,7 @@ with col1:
 
 
 
-[Image of a basic DC series motor circuit diagram]
+[Image of a basic DC series motor circuit diagram],
 
 
 # --- GRAPH ---
