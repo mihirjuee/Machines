@@ -45,9 +45,25 @@ if idx is not None:
     V_intersect = k * (1 - np.exp(-b * If_intersect)) * speed_factor + residual_v
 
 # --- CRITICAL RESISTANCE (APPROXIMATION) ---
-Rc = max(E_occ / If)
+# --- CRITICAL RESISTANCE (TANGENT METHOD) ---
 
-V_critical = If * Rc
+# Numerical derivative of OCC
+dE_dIf = np.gradient(E_occ, If)
+
+# Find point where slope ≈ E/If (tangent condition)
+error = np.abs(dE_dIf - (E_occ / If))
+
+crit_idx = np.argmin(error)
+
+# Critical point
+If_crit = If[crit_idx]
+E_crit = E_occ[crit_idx]
+
+# Critical resistance = slope at that point
+Rc = dE_dIf[crit_idx]
+
+# Critical resistance line (tangent)
+V_critical = Rc * If
 
 # --- PLOTTING ---
 fig, ax = plt.subplots(figsize=(9, 5))
