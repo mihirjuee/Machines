@@ -37,7 +37,7 @@ with col1:
     d += elm.Line().down(length=0.1)
     d += elm.Resistor().label("Ra")
     d += elm.Motor().label("M")
-   
+    d += elm.Line().left(length=2)
     # FIX: Use .fig attribute to access the Matplotlib figure directly
     st.pyplot(d.draw().fig)
 
