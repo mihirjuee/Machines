@@ -23,8 +23,10 @@ with col1:
     st.subheader("🔌 DC Shunt Motor Circuit")
     
     d = schemdraw.Drawing()
+    d.push()
     d += elm.SourceV().label(f"{V}V")
     d += elm.Line().right(length=2)
+    d.pop()
     d += elm.Line().down(length=2)
     # Field circuit (Shunt)
     d.push()
