@@ -19,28 +19,32 @@ phi = st.sidebar.slider("Flux (Φ)", 0.5, 1.5, 1.0)
 col1, col2 = st.columns([1, 1])
 
 # --- CIRCUIT DIAGRAM ---
+# --- CIRCUIT DIAGRAM ---
 with col1:
     st.subheader("🔌 DC Shunt Motor Circuit")
     
-    with schemdraw.Drawing() as d:
-        d += (V_src := elm.SourceV().label(f"{V}V"))
-        d += elm.Line().right(d=1)
-        
-        # Field circuit
-        d.push()
-        d += elm.Line().down()
-        d += elm.Resistor().label("Rf")
-        d += elm.Ground()
-        d.pop()
-        
-        # Armature circuit
-        d += elm.Resistor().label("Ra")
-        d += elm.Motor().label("M")
-        d += elm.Line().down()
-        d += elm.Ground()
-        
-        fig = d.draw() # Correct way to capture the figure
+    # Use standard schemdraw approach
+    d = schemdraw.Drawing()
     
+    # Define elements
+    d += (V_src := elm.SourceV().label(f"{V}V"))
+    d += elm.Line().length(d=1) # Correct syntax for length
+    
+    # Field circuit
+    d.push()
+    d += elm.Line().down()
+    d += elm.Resistor().label("Rf")
+    d += elm.Ground()
+    d.pop()
+    
+    # Armature circuit
+    d += elm.Resistor().label("Ra")
+    d += elm.Motor().label("M")
+    d += elm.Line().down()
+    d += elm.Ground()
+    
+    # Draw to a figure object
+    fig = d.draw() 
     st.pyplot(fig)
 
 # --- GRAPH ---
