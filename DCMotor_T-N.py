@@ -5,11 +5,12 @@ import schemdraw
 import schemdraw.elements as elm
 
 # --- PAGE CONFIG ---
-st.set_page_config(page_title="DC Shunt Motor Characteristics", layout="wide")
+st.set_page_config(page_title="DC Shunt Motor Characteristics",page_icon="logo.png", layout="wide")
 
 st.title("⚡ DC Shunt Motor Torque-Speed Characteristics")
 
 # --- SIDEBAR INPUTS ---
+st.sidebar.image("logo.png", use_container_width=True)
 st.sidebar.header("🔧 Motor Parameters")
 V = st.sidebar.slider("Supply Voltage (V)", 100, 300, 220)
 Ra = st.sidebar.slider("Armature Resistance (Ohm)", 0.1, 2.0, 0.5)
