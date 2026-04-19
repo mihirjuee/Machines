@@ -81,17 +81,21 @@ def series_generator():
 def compound_generator():
     d = schemdraw.Drawing(unit=2)
 
+    # ===== ARMATURE =====
     d += elm.SourceV().label("Ea")
     d += elm.Resistor().label("Ra")
 
-    node = elm.Dot()
-    d += node
+    # Junction point
+    d += elm.Dot()
 
+    # ===== SERIES FIELD + LOAD PATH =====
+    d.push()
     d += elm.Resistor().right().label("Series Field")
     d += elm.Resistor().down().label("Load")
+    d.pop()
 
+    # ===== SHUNT FIELD (PARALLEL) =====
     d.push()
-    d.move_from(node)
     d += elm.Line().up()
     d += elm.Resistor().label("Shunt Field")
     d += elm.Line().down()
