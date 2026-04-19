@@ -8,6 +8,16 @@ import schemdraw.elements as elm
 import numpy as np
 
 # ================= PAGE =================
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background: linear-gradient(135deg, #e0eafc, #cfdef3);
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 st.set_page_config(page_title="DC Generator Virtual Lab", page_icon="logo.png", layout="wide")
 
 st.title("⚡ DC Generator Virtual Lab (External Characteristics)")
@@ -26,6 +36,7 @@ st.header("Machine Parameters")
 
 phi = st.slider("Flux per pole (ϕ in Wb)", 0.01, 0.2, 0.05)
 N = st.slider("Speed (N in RPM)", 200, 2000, 1000)
+st.sidebar.image("logo.png", width=80)
 Ra = st.sidebar.slider("Armature Resistance (Ohm)", 0.1, 5.0, 1.0)
 k = st.sidebar.slider("Machine constant (k)", 0.5, 5.0, 1.0)
 R_load = st.sidebar.slider("Load Resistance (Ohm)", 1, 100, 20)
