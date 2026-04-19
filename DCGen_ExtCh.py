@@ -37,7 +37,7 @@ def separately_excited():
     
     
     d += elm.Line().up(0.1)
-    d += elm.Motor().label("Eg")
+    d += elm.Motor(size=1.0).label("Eg")
     d += elm.Line().up(0.1)
     d += elm.Resistor().label("Ra")
     d += elm.Line().right()
