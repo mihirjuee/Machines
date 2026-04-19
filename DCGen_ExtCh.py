@@ -35,8 +35,8 @@ V = k * phi * N
 def separately_excited():
     d = schemdraw.Drawing(unit=2)
     
-    d += elm.Line().up()
-    d += elm.Motor().label("Ea")
+    d += elm.Line().up(1)
+    d += elm.Motor().label("Eg")
     d += elm.Resistor().label("Ra")
     d += elm.Line().right()
     d += elm.Resistor().down().label("Load")
