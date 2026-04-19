@@ -42,8 +42,9 @@ def separately_excited():
     d += (top_line := elm.Line().right())
     d += (load := elm.Resistor().down().label("Load"))
     d += (bottom_line := elm.Line().left())
-    d += elm.Line().down().at(M.start) # Closing the loop
-    
+    d += elm.Line().left().at(M.start) # Closing the loop
+    d += elm.Line().down()
+    d += elm.Line().right()
     # Separate Field circuit
     d.move(-1, 2.5) # Move to left to draw the field
     d += elm.SourceV().up().label("Vf")
