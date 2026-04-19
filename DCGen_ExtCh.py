@@ -47,7 +47,8 @@ def shunt_generator():
     d += elm.SourceV().label("Ea")
     d += elm.Resistor().label("Ra")
 
-    node = d += elm.Dot()
+    node = elm.Dot()
+    d += node
 
     d += elm.Line().right()
     d += elm.Resistor().down().label("Load")
