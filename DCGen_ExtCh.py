@@ -44,19 +44,23 @@ def separately_excited():
 def shunt_generator():
     d = schemdraw.Drawing(unit=2)
 
+    # Armature
     d += elm.SourceV().label("Ea")
     d += elm.Resistor().label("Ra")
 
-    node = elm.Dot()
-    d += node
+    # Junction point (no node stored)
+    d += elm.Dot()
 
+    # Load branch
+    d.push()
     d += elm.Line().right()
     d += elm.Resistor().down().label("Load")
+    d.pop()
 
+    # Shunt field branch (parallel path)
     d.push()
-    d.move_from(node)
     d += elm.Line().up()
-    d += elm.Resistor().label("Rsh")
+    d += elm.Resistor().label("Rsh (Field)")
     d += elm.Line().down()
     d.pop()
 
