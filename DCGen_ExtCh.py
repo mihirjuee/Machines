@@ -8,7 +8,7 @@ import schemdraw.elements as elm
 import numpy as np
 
 # ================= PAGE =================
-st.set_page_config(page_title="DC Generator Virtual Lab", page_icon="⚡", layout="wide")
+st.set_page_config(page_title="DC Generator Virtual Lab", page_icon="logo.png", layout="wide")
 
 st.title("⚡ DC Generator Virtual Lab (All Types + Characteristics)")
 
@@ -192,4 +192,4 @@ with col2:
     st.pyplot(fig2)
 
 # ================= INFO =================
-st.info("This simulation shows DC generator circuit behavior and external characteristics.")
+st.info("This simulation shows DC generator circuits and external characteristics.")
