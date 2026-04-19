@@ -1,4 +1,4 @@
-# 🔥 MUST BE FIRST
+# 🔥 MUST BE FIRST (Fix for Streamlit rendering issues)
 import matplotlib
 matplotlib.use('Agg')
 
@@ -15,8 +15,12 @@ st.set_page_config(page_title="Learn EE: Induction Lab", page_icon="⚡", layout
 # --- CUSTOM CSS ---
 st.markdown("""
 <style>
-[data-testid="stAppViewContainer"] { background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%); }
-[data-testid="stSidebar"] { background-color: #f8f9fa; }
+[data-testid="stAppViewContainer"] {
+    background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+}
+[data-testid="stSidebar"] {
+    background-color: #f8f9fa;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -53,26 +57,23 @@ def get_torque(s):
     T = (3 * V_th**2 * (R2/s)) / (omega_s * denom)
     return T
 
-# --- MAIN TITLE ---
-st.title("⚡ Induction Machine: Four-Quadrant Analysis")
+# --- TITLE ---
+st.title("⚡ Induction Machine: Motoring & Braking Analysis")
 
 col1, col2 = st.columns([1, 2])
 
-# --- FIXED EQUIVALENT CIRCUIT ---
+# --- EQUIVALENT CIRCUIT ---
 with col1:
     st.subheader("🔌 Equivalent Circuit")
 
     d = schemdraw.Drawing()
 
-    # Source
     d += elm.SourceV().label("V₁")
     d += elm.Line().right()
 
-    # Stator impedance
     d += elm.Resistor().label("R₁")
     d += elm.Inductor().label("X₁")
 
-    # Node for parallel branch
     d += elm.Dot()
 
     # Magnetizing branch
@@ -92,33 +93,40 @@ with col1:
     d += elm.Line().left(6)
     d += elm.Line().up()
 
-    # 🔥 FIXED RENDERING
     d.draw()
     fig = plt.gcf()
     st.pyplot(fig)
     plt.clf()
 
-# --- TORQUE-SLIP PLOT ---
+# --- TORQUE-SLIP PLOT (Motoring + Braking) ---
 with col2:
-    s_plot = np.linspace(-1.0, 2.0, 500)
-    T_plot = get_torque(s_plot)
+    # Motoring: s = 1 → 0
+    s_mot = np.linspace(1.0, 0.001, 300)
+    T_mot = get_torque(s_mot)
+
+    # Braking: s = 1 → 2
+    s_brk = np.linspace(1.0, 2.0, 300)
+    T_brk = get_torque(s_brk)
 
     fig, ax = plt.subplots(figsize=(10, 4))
 
-    ax.plot(s_plot, T_plot, lw=2)
+    ax.plot(s_mot, T_mot, lw=2, label="Motoring")
+    ax.plot(s_brk, T_brk, lw=2, linestyle='--', label="Braking")
 
-    # Zones
-    ax.fill_between(s_plot, T_plot, 0, where=(s_plot < 0), alpha=0.2, label="Generating")
-    ax.fill_between(s_plot, T_plot, 0, where=(s_plot >= 0) & (s_plot <= 1), alpha=0.2, label="Motoring")
-    ax.fill_between(s_plot, T_plot, 0, where=(s_plot > 1), alpha=0.2, label="Braking")
+    ax.fill_between(s_mot, T_mot, 0, alpha=0.2)
+    ax.fill_between(s_brk, T_brk, 0, alpha=0.2)
 
+    ax.axvline(1, linestyle=':', label="s = 1 (Standstill)")
     ax.axhline(0)
-    ax.axvline(0)
 
     ax.set_xlabel("Slip (s)")
     ax.set_ylabel("Torque (Nm)")
     ax.set_title("Torque-Slip Characteristics")
     ax.legend()
+    ax.grid(True)
+
+    # Optional: Engineering view (uncomment if needed)
+    # ax.set_xlim(2, 0)
 
     st.pyplot(fig)
 
@@ -132,9 +140,10 @@ def obj(s):
 
 op_slip = fminbound(obj, -0.5, 1.5)
 
-cols = st.columns(3)
-cols[0].metric("Operating Slip", f"{op_slip:.4f}")
-cols[1].metric("Rotor Speed", f"{Ns*(1-op_slip):.0f} RPM")
+colA, colB, colC = st.columns(3)
+
+colA.metric("Operating Slip", f"{op_slip:.4f}")
+colB.metric("Rotor Speed", f"{Ns*(1-op_slip):.0f} RPM")
 
 mode = "Generating" if op_slip < 0 else ("Braking" if op_slip > 1 else "Motoring")
-cols[2].metric("Machine Mode", mode)
+colC.metric("Machine Mode", mode)
