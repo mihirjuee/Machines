@@ -198,7 +198,7 @@ if gen_type != "Compound (Short Shunt)":
     ax.set_ylabel("Terminal Voltage (Vt)")
     ax.set_title(gen_type + " Characteristic")
     ax.grid(True)
-
+    ax.set_ylim(bottom=0)
 else:
 
     IL, under, flat, over = characteristics(gen_type)
