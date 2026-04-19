@@ -43,7 +43,7 @@ def separately_excited():
     d += elm.Resistor().down().label("Load")
     d += elm.Line().down(1.5)
     d += elm.Line().left()
-    d += elm.Line().up(1)
+    d += elm.Line().up(1.5)
     return d
 
 
