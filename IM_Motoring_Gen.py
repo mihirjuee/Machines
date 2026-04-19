@@ -1,4 +1,4 @@
-# 🔥 MUST BE FIRST (Fix for Streamlit rendering issues)
+# 🔥 MUST BE FIRST
 import matplotlib
 matplotlib.use('Agg')
 
@@ -10,7 +10,7 @@ import schemdraw
 import schemdraw.elements as elm
 
 # --- PAGE CONFIG ---
-st.set_page_config(page_title="Learn EE: Induction Lab", page_icon="⚡", layout="wide")
+st.set_page_config(page_title="Induction Machine Lab", page_icon="⚡", layout="wide")
 
 # --- CUSTOM CSS ---
 st.markdown("""
@@ -26,7 +26,7 @@ st.markdown("""
 
 # --- SIDEBAR ---
 with st.sidebar:
-    st.title("Learn EE Interactive")
+    st.title("⚡ Induction Machine Lab")
 
     st.header("⚙️ Machine Parameters")
     V = st.slider("Voltage (L-L V)", 100, 500, 400)
@@ -58,7 +58,7 @@ def get_torque(s):
     return T
 
 # --- TITLE ---
-st.title("⚡ Induction Machine: Motoring & Braking Analysis")
+st.title("⚡ Induction Machine: Torque–Speed Characteristics")
 
 col1, col2 = st.columns([1, 2])
 
@@ -98,40 +98,40 @@ with col1:
     st.pyplot(fig)
     plt.clf()
 
-# --- TORQUE-SLIP PLOT (Motoring + Braking) ---
+# --- TORQUE-SPEED PLOT ---
 with col2:
-    # Motoring: s = 1 → 0
-    s_mot = np.linspace(1.0, 0.001, 300)
-    T_mot = get_torque(s_mot)
+    # Full slip range
+    s = np.linspace(-1.0, 2.0, 600)
+    T = get_torque(s)
 
-    # Braking: s = 1 → 2
-    s_brk = np.linspace(1.0, 2.0, 300)
-    T_brk = get_torque(s_brk)
+    # Convert to speed
+    N = Ns * (1 - s)
 
     fig, ax = plt.subplots(figsize=(10, 4))
 
-    ax.plot(s_mot, T_mot, lw=2, label="Motoring")
-    ax.plot(s_brk, T_brk, lw=2, linestyle='--', label="Braking")
+    ax.plot(N, T, lw=2)
 
-    ax.fill_between(s_mot, T_mot, 0, alpha=0.2)
-    ax.fill_between(s_brk, T_brk, 0, alpha=0.2)
+    # Regions
+    ax.fill_between(N, T, 0, where=(s < 0), alpha=0.2, label="Generating (N > Ns)")
+    ax.fill_between(N, T, 0, where=(s >= 0) & (s <= 1), alpha=0.2, label="Motoring (0 < N < Ns)")
+    ax.fill_between(N, T, 0, where=(s > 1), alpha=0.2, label="Braking (N < 0)")
 
-    ax.axvline(1, linestyle=':', label="s = 1 (Standstill)")
+    # Reference lines
     ax.axhline(0)
+    ax.axvline(0, linestyle='--', label="Zero Speed")
+    ax.axvline(Ns, linestyle=':', label="Synchronous Speed (Ns)")
 
-    ax.set_xlabel("Slip (s)")
+    # Labels
+    ax.set_xlabel("Speed (RPM)")
     ax.set_ylabel("Torque (Nm)")
-    ax.set_title("Torque-Slip Characteristics")
+    ax.set_title("Torque–Speed Characteristics")
     ax.legend()
     ax.grid(True)
-
-    # Optional: Engineering view (uncomment if needed)
-    # ax.set_xlim(2, 0)
 
     st.pyplot(fig)
 
 # --- INTERACTIVE ANALYSIS ---
-st.subheader("🔍 Interactive Load Analysis")
+st.subheader("🔍 Interactive Operating Point")
 
 load_t = st.slider("Apply Load Torque (Nm)", -100.0, 200.0, 50.0)
 
@@ -140,10 +140,12 @@ def obj(s):
 
 op_slip = fminbound(obj, -0.5, 1.5)
 
+speed = Ns * (1 - op_slip)
+
 colA, colB, colC = st.columns(3)
 
 colA.metric("Operating Slip", f"{op_slip:.4f}")
-colB.metric("Rotor Speed", f"{Ns*(1-op_slip):.0f} RPM")
+colB.metric("Speed (RPM)", f"{speed:.0f}")
 
 mode = "Generating" if op_slip < 0 else ("Braking" if op_slip > 1 else "Motoring")
-colC.metric("Machine Mode", mode)
+colC.metric("Mode", mode)
