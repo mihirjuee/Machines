@@ -22,8 +22,12 @@ gen_type = st.sidebar.selectbox(
         "Compound (Short Shunt)"
     ]
 )
+st.header("Machine Parameters")
 
-V = st.sidebar.slider("Generated EMF (V)", 50, 300, 220)
+phi = st.slider("Flux per pole (ϕ in Wb)", 0.01, 0.2, 0.05)
+N = st.slider("Speed (N in RPM)", 200, 2000, 1000)
+k = st.slider("Machine constant (k)", 0.5, 5.0, 1.0)
+V = k * phi * N
 R_load = st.sidebar.slider("Load Resistance (Ohm)", 1, 100, 20)
 Ra = st.sidebar.slider("Armature Resistance (Ohm)", 0.1, 5.0, 1.0)
 
