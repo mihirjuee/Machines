@@ -144,7 +144,7 @@ def characteristics(gen_type):
         return IL, Vt
 
     elif gen_type == "Shunt Generator":
-        Vt = V - 0.8 * IL * Ra - 0.6 * IL**1.2
+        Vt = V - IL * Ra - 0.15 * IL**1.5
         return IL, Vt
 
     elif gen_type == "Series Generator":
