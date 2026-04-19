@@ -80,8 +80,12 @@ def shunt_generator():
     d.push()
     d += elm.Line().down(0.1)
     d += elm.Inductor().label("Rsh (Field)")
-    d.pop()
+    d.push()
     d += elm.Line().left(2)
+    d.pop()
+    d += elm.Line().right(2)
+    d.pop()
+    
     return d
 
 
