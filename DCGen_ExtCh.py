@@ -122,7 +122,7 @@ def compound_generator():
 
     # ===== SHUNT FIELD (PARALLEL) =====
     d.push()
-    d += elm.Line().down()
+    d += elm.Line().down(0.1)
     d += elm.Resistor().label("Shunt Field")
     d += elm.Line().down()
     d.pop()
