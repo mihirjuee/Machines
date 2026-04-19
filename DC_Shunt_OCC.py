@@ -3,6 +3,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # --- PAGE CONFIG ---
+gradient_bg = """
+<style>
+[data-testid="stAppViewContainer"] {
+    background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+}
+</style>
+"""
+st.markdown(gradient_bg, unsafe_allow_html=True)
+
 st.set_page_config(page_title="Voltage Build-up Simulation",page_icon="logo.png", layout="wide")
 
 st.title("⚡ DC Shunt Generator: Voltage Build-up")
