@@ -64,7 +64,7 @@ def shunt_generator():
     d = schemdraw.Drawing(unit=2)
 
     # Armature
-    d += elm.Motor().label("Ea")
+    d += elm.Motor().label("Eg")
     d += elm.Resistor().label("Ra")
 
     # Junction point (no node stored)
@@ -78,7 +78,7 @@ def shunt_generator():
 
     # Shunt field branch (parallel path)
     d.push()
-    d += elm.Line().up()
+    d += elm.Line().down()
     d += elm.Resistor().label("Rsh (Field)")
     d += elm.Line().down()
     d.pop()
