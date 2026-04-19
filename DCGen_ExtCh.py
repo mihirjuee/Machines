@@ -140,7 +140,7 @@ def characteristics(gen_type):
     IL = np.linspace(0, 10, 60)
 
     if gen_type == "Separately Excited":
-        Vt = V - 0.5 * IL * Ra
+        Vt = V -  IL * Ra
         return IL, Vt
 
     elif gen_type == "Shunt Generator":
