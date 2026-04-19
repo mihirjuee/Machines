@@ -78,8 +78,8 @@ def shunt_generator():
 
     # Shunt field branch (parallel path)
     d.push()
-    d += elm.Line().down()
-    d += elm.Resistor().label("Rsh (Field)")
+    d += elm.Line().down(0.1)
+    d += elm.Inductor().label("Rsh (Field)")
     d += elm.Line().down()
     d.pop()
 
