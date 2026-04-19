@@ -148,50 +148,47 @@ else:
     d = compound_generator()
 
 
-# ================= UI LAYOUT =================
-col1, col2 = st.columns([1.2, 1])
+# ================= UI LAYOUT (VERTICAL) =================
 
 # -------- CIRCUIT --------
-with col1:
-    st.subheader("🔌 Circuit Diagram")
+st.subheader("🔌 Circuit Diagram")
 
-    d.draw()
-    fig = plt.gcf()
-    st.pyplot(fig)
-    plt.clf()
+d.draw()
+fig = plt.gcf()
+st.pyplot(fig)
+plt.clf()
 
 # -------- CHARACTERISTICS --------
-with col2:
-    st.subheader("📉 External Characteristics")
+st.subheader("📉 External Characteristics")
 
-    fig2, ax = plt.subplots()
+fig2, ax = plt.subplots()
 
-    if gen_type != "Compound (Short Shunt)":
+if gen_type != "Compound (Short Shunt)":
 
-        IL, Vt = characteristics(gen_type)
+    IL, Vt = characteristics(gen_type)
 
-        ax.plot(IL, Vt, linewidth=2)
+    ax.plot(IL, Vt, linewidth=2)
 
-        ax.set_xlabel("Load Current (IL)")
-        ax.set_ylabel("Terminal Voltage (Vt)")
-        ax.set_title(gen_type + " Characteristic")
-        ax.grid(True)
+    ax.set_xlabel("Load Current (IL)")
+    ax.set_ylabel("Terminal Voltage (Vt)")
+    ax.set_title(gen_type + " Characteristic")
+    ax.grid(True)
 
-    else:
+else:
 
-        IL, under, flat, over = characteristics(gen_type)
+    IL, under, flat, over = characteristics(gen_type)
 
-        ax.plot(IL, under, label="Under-compounded", linewidth=2)
-        ax.plot(IL, flat, label="Flat-compounded", linewidth=2)
-        ax.plot(IL, over, label="Over-compounded", linewidth=2)
+    ax.plot(IL, under, label="Under-compounded", linewidth=2)
+    ax.plot(IL, flat, label="Flat-compounded", linewidth=2)
+    ax.plot(IL, over, label="Over-compounded", linewidth=2)
 
-        ax.set_xlabel("Load Current (IL)")
-        ax.set_ylabel("Terminal Voltage (Vt)")
-        ax.set_title("Compound Generator Characteristics")
-        ax.grid(True)
-        ax.legend()
+    ax.set_xlabel("Load Current (IL)")
+    ax.set_ylabel("Terminal Voltage (Vt)")
+    ax.set_title("Compound Generator Characteristics")
+    ax.grid(True)
+    ax.legend()
 
-    st.pyplot(fig2)
+st.pyplot(fig2)
 
 # ================= INFO =================
 st.info("This simulation shows DC generator circuits and external characteristics.")
