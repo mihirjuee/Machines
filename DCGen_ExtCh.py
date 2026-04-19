@@ -98,7 +98,9 @@ def series_generator():
     d += elm.Resistor().label("Ra")
     d += elm.Resistor().label("Series Field")
     d += elm.Resistor().label("Load")
-
+    d += elm.Line().down()
+    d += elm.Line().left()
+    d += elm.Line().up()
     return d
 
 
