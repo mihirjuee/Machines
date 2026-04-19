@@ -34,17 +34,22 @@ V = k * phi * N
 
 def separately_excited():
     d = schemdraw.Drawing(unit=1.2)
-    fig.set_size_inches(4.5, 3.5)
-    
-    d += elm.Line().up(0.1)
-    d += elm.Motor().label("Eg")
+
+    # ===== ARMATURE (EMF) =====
+    d += elm.SourceV().label("Eg")
     d += elm.Resistor().label("Ra")
+
+    # ===== LOAD BRANCH =====
+    d.push()
     d += elm.Line().right()
-    d += elm.Line().down()
     d += elm.Resistor().down().label("Load")
-    d += elm.Line().down(1.5)
+    d.pop()
+
+    # ===== RETURN PATH =====
+    d += elm.Line().down()
     d += elm.Line().left()
-    d += elm.Line().up(1.5)
+    d += elm.Line().up()
+
     return d
 
 
