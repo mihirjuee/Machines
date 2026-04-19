@@ -10,23 +10,11 @@ import schemdraw
 import schemdraw.elements as elm
 
 # --- PAGE CONFIG ---
-st.set_page_config(page_title="Induction Machine Lab", page_icon="⚡", layout="wide")
-
-# --- CUSTOM CSS ---
-st.markdown("""
-<style>
-[data-testid="stAppViewContainer"] {
-    background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
-}
-[data-testid="stSidebar"] {
-    background-color: #f8f9fa;
-}
-</style>
-""", unsafe_allow_html=True)
+st.set_page_config(page_title="Induction Machine Lab Pro", page_icon="⚡", layout="wide")
 
 # --- SIDEBAR ---
 with st.sidebar:
-    st.title("⚡ Induction Machine Lab")
+    st.title("⚡ Induction Lab Pro")
 
     st.header("⚙️ Machine Parameters")
     V = st.slider("Voltage (L-L V)", 100, 500, 400)
@@ -36,11 +24,15 @@ with st.sidebar:
     st.divider()
 
     st.header("⚙️ Equivalent Circuit")
-    R1 = st.slider("Stator R1 [Ω]", 0.01, 5.0, 0.5)
-    X1 = st.slider("Stator X1 [Ω]", 0.1, 5.0, 1.0)
-    R2 = st.slider("Rotor R2 [Ω]", 0.01, 5.0, 0.8)
-    X2 = st.slider("Rotor X2 [Ω]", 0.1, 5.0, 1.2)
-    Xm = st.slider("Magnetizing Xm [Ω]", 5.0, 100.0, 30.0)
+    R1 = st.slider("R1 [Ω]", 0.01, 5.0, 0.5)
+    X1 = st.slider("X1 [Ω]", 0.1, 5.0, 1.0)
+    R2 = st.slider("R2 [Ω]", 0.01, 5.0, 0.8)
+    X2 = st.slider("X2 [Ω]", 0.1, 5.0, 1.2)
+    Xm = st.slider("Xm [Ω]", 5.0, 100.0, 30.0)
+
+    st.divider()
+
+    mode_select = st.radio("Select Mode View", ["All", "Motoring", "Generating", "Braking"])
 
 # --- CALCULATIONS ---
 V_ph = V / np.sqrt(3)
@@ -57,95 +49,141 @@ def get_torque(s):
     T = (3 * V_th**2 * (R2/s)) / (omega_s * denom)
     return T
 
+def get_current(s):
+    s = np.where(s == 0, 1e-6, s)
+    Z = complex(R1 + R2/s, X1 + X2)
+    return V_ph / abs(Z)
+
+def get_efficiency(s):
+    s = np.where(s == 0, 1e-6, s)
+    return np.maximum(0, (1 - s) * 100)
+
 # --- TITLE ---
-st.title("⚡ Induction Machine: Torque–Speed Characteristics")
+st.title("⚡ Induction Machine – Advanced Analysis")
 
 col1, col2 = st.columns([1, 2])
 
-# --- EQUIVALENT CIRCUIT ---
+# --- CIRCUIT ---
 with col1:
     st.subheader("🔌 Equivalent Circuit")
 
     d = schemdraw.Drawing()
-
-    d += elm.SourceV().label("V₁")
+    d += elm.SourceV().label("V")
     d += elm.Line().right()
-
-    d += elm.Resistor().label("R₁")
-    d += elm.Inductor().label("X₁")
-
+    d += elm.Resistor().label("R1")
+    d += elm.Inductor().label("X1")
     d += elm.Dot()
 
-    # Magnetizing branch
     d.push()
     d += elm.Line().up()
     d += elm.Inductor().label("Xm")
     d += elm.Line().down()
     d.pop()
 
-    # Rotor branch
     d += elm.Line().right()
-    d += elm.Resistor().label("R₂/s")
-    d += elm.Inductor().label("X₂")
+    d += elm.Resistor().label("R2/s")
+    d += elm.Inductor().label("X2")
 
-    # Return path
     d += elm.Line().down()
     d += elm.Line().left(6)
     d += elm.Line().up()
 
     d.draw()
-    fig = plt.gcf()
-    st.pyplot(fig)
+    st.pyplot(plt.gcf())
     plt.clf()
 
-# --- TORQUE-SPEED PLOT ---
+# --- PLOTS ---
 with col2:
-    # Full slip range
-    s = np.linspace(-1.0, 2.0, 600)
+    s = np.linspace(-1, 2, 600)
     T = get_torque(s)
-
-    # Convert to speed
     N = Ns * (1 - s)
 
+    # Mode filtering
+    if mode_select == "Motoring":
+        mask = (s >= 0) & (s <= 1)
+    elif mode_select == "Generating":
+        mask = (s < 0)
+    elif mode_select == "Braking":
+        mask = (s > 1)
+    else:
+        mask = np.ones_like(s, dtype=bool)
+
     fig, ax = plt.subplots(figsize=(10, 4))
+    ax.plot(N[mask], T[mask], lw=2)
 
-    ax.plot(N, T, lw=2)
+    # --- Tmax (Breakdown Torque) ---
+    Tmax = np.max(T)
+    idx = np.argmax(T)
+    ax.scatter(N[idx], Tmax)
+    ax.text(N[idx], Tmax, "  Tmax", fontsize=9)
 
-    # Regions
-    ax.fill_between(N, T, 0, where=(s < 0), alpha=0.2, label="Generating (N > Ns)")
-    ax.fill_between(N, T, 0, where=(s >= 0) & (s <= 1), alpha=0.2, label="Motoring (0 < N < Ns)")
-    ax.fill_between(N, T, 0, where=(s > 1), alpha=0.2, label="Braking (N < 0)")
+    # --- Stable / Unstable ---
+    ax.axvline(Ns, linestyle=':', label="Ns")
 
-    # Reference lines
+    # Stable: negative slope
+    stable = np.gradient(T) < 0
+    ax.fill_between(N, T, 0, where=stable, alpha=0.1, label="Stable")
+    ax.fill_between(N, T, 0, where=~stable, alpha=0.05, label="Unstable")
+
+    # --- Regions ---
+    ax.fill_between(N, T, 0, where=(s < 0), alpha=0.2, label="Generating")
+    ax.fill_between(N, T, 0, where=(s >= 0) & (s <= 1), alpha=0.2, label="Motoring")
+    ax.fill_between(N, T, 0, where=(s > 1), alpha=0.2, label="Braking")
+
+    # --- Power Flow Arrows ---
+    ax.annotate("Power → Rotor", xy=(0.5*Ns, Tmax/2), xytext=(0.3*Ns, Tmax/1.5),
+                arrowprops=dict(arrowstyle="->"))
+    ax.annotate("Power → Supply", xy=(1.2*Ns, Tmax/2), xytext=(1.4*Ns, Tmax/1.5),
+                arrowprops=dict(arrowstyle="->"))
+
     ax.axhline(0)
-    ax.axvline(0, linestyle='--', label="Zero Speed")
-    ax.axvline(Ns, linestyle=':', label="Synchronous Speed (Ns)")
+    ax.axvline(0, linestyle='--')
 
-    # Labels
     ax.set_xlabel("Speed (RPM)")
     ax.set_ylabel("Torque (Nm)")
     ax.set_title("Torque–Speed Characteristics")
-    ax.legend()
+    ax.legend(fontsize=8)
     ax.grid(True)
 
     st.pyplot(fig)
 
-# --- INTERACTIVE ANALYSIS ---
-st.subheader("🔍 Interactive Operating Point")
+# --- EXTRA PLOTS ---
+st.subheader("📉 Performance Curves")
 
-load_t = st.slider("Apply Load Torque (Nm)", -100.0, 200.0, 50.0)
+colA, colB = st.columns(2)
+
+with colA:
+    fig1, ax1 = plt.subplots()
+    ax1.plot(N, get_current(s))
+    ax1.set_title("Current vs Speed")
+    ax1.set_xlabel("Speed")
+    ax1.set_ylabel("Current")
+    ax1.grid(True)
+    st.pyplot(fig1)
+
+with colB:
+    fig2, ax2 = plt.subplots()
+    ax2.plot(N, get_efficiency(s))
+    ax2.set_title("Efficiency vs Speed")
+    ax2.set_xlabel("Speed")
+    ax2.set_ylabel("Efficiency (%)")
+    ax2.grid(True)
+    st.pyplot(fig2)
+
+# --- OPERATING POINT ---
+st.subheader("🔍 Operating Point")
+
+load_t = st.slider("Load Torque", -100.0, 200.0, 50.0)
 
 def obj(s):
     return abs(get_torque(s) - load_t)
 
 op_slip = fminbound(obj, -0.5, 1.5)
-
 speed = Ns * (1 - op_slip)
 
-colA, colB, colC = st.columns(3)
+colX, colY, colZ = st.columns(3)
 
-colA.metric("Operating Slip", f"{op_slip:.4f}")
-colB.metric("Speed (RPM)", f"{speed:.0f}")
-
+colX.metric("Slip", f"{op_slip:.4f}")
+colY.metric("Speed (RPM)", f"{speed:.0f}")
 mode = "Generating" if op_slip < 0 else ("Braking" if op_slip > 1 else "Motoring")
-colC.metric("Mode", mode)
+colZ.metric("Mode", mode)
