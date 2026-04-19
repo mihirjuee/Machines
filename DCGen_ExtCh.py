@@ -34,7 +34,7 @@ V = k * phi * N
 
 def separately_excited():
     d = schemdraw.Drawing(unit=1.2)
-    fig.set_size_inches(4.5, 3.5)
+    
     
     d += elm.Line().up(0.1)
     d += elm.Motor().label("Eg")
