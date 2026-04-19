@@ -8,63 +8,95 @@ import matplotlib.pyplot as plt
 
 # --- PAGE CONFIG ---
 st.set_page_config(
-    page_title="Induction Motor Lab",
+    page_title="IM Lab Pro",
     page_icon="⚡",
-    layout="centered"  # ✅ Better for mobile
+    layout="centered"
 )
 
-# --- MOBILE CSS ---
+# --- APP STYLE CSS ---
 st.markdown("""
 <style>
-/* Reduce padding for mobile */
-.block-container {
-    padding-top: 1rem;
-    padding-bottom: 1rem;
-    padding-left: 0.8rem;
-    padding-right: 0.8rem;
+
+/* Background */
+[data-testid="stAppViewContainer"] {
+    background: #0f172a;
+    color: white;
 }
 
-/* Bigger buttons & sliders */
-button, .stSlider {
-    font-size: 16px !important;
+/* Card style */
+.card {
+    background: #1e293b;
+    padding: 15px;
+    border-radius: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
 }
 
-/* Sticky top panel */
-.sticky {
-    position: sticky;
-    top: 0;
-    background-color: white;
+/* Header */
+.header {
+    font-size: 22px;
+    font-weight: bold;
     padding: 10px;
-    z-index: 999;
-    border-bottom: 1px solid #ddd;
 }
+
+/* Sticky bottom nav */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background: #020617;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    border-top: 1px solid #334155;
+    z-index: 999;
+}
+
+/* Nav buttons */
+.nav-btn {
+    color: white;
+    font-size: 14px;
+    text-align: center;
+}
+
+/* Slider spacing */
+.stSlider {
+    margin-bottom: 10px;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
-# --- TITLE ---
-st.title("⚡ Induction Machine Lab (Mobile)")
+# --- HEADER ---
+st.markdown('<div class="header">⚡ Induction Motor Lab</div>', unsafe_allow_html=True)
 
-# --- PARAMETERS (COLLAPSIBLE) ---
-with st.expander("⚙️ Machine Parameters", expanded=True):
-    V = st.slider("Voltage (L-L)", 100, 500, 400)
+# --- SESSION STATE FOR NAV ---
+if "page" not in st.session_state:
+    st.session_state.page = "Torque"
+
+# --- NAVIGATION HANDLER ---
+def set_page(p):
+    st.session_state.page = p
+
+# --- PARAMETERS (CARD) ---
+with st.container():
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+
+    st.subheader("🎛 Controls")
+    V = st.slider("Voltage", 100, 500, 400)
     f = st.slider("Frequency", 10, 100, 50)
     P = st.selectbox("Poles", [2, 4, 6, 8], index=1)
 
-with st.expander("⚙️ Equivalent Circuit"):
-    R1 = st.slider("R1", 0.01, 5.0, 0.5)
-    X1 = st.slider("X1", 0.1, 5.0, 1.0)
-    R2 = st.slider("R2", 0.01, 5.0, 0.8)
-    X2 = st.slider("X2", 0.1, 5.0, 1.2)
-    Xm = st.slider("Xm", 5.0, 100.0, 30.0)
+    s_oper = st.slider("Slip", -0.5, 1.5, 0.05)
 
-# --- SLIP CONTROL (IMPORTANT → KEEP VISIBLE) ---
-st.markdown("### 🎛 Control")
-s_oper = st.slider("Slip", -0.5, 1.5, 0.05, step=0.01)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # --- CALCULATIONS ---
 V_ph = V / np.sqrt(3)
 Ns = 120 * f / P
 omega_s = (2 * np.pi * Ns) / 60
+
+R1, X1, R2, X2, Xm = 0.5, 1.0, 0.8, 1.2, 30
 
 Z_th = ((1j * Xm) * (R1 + 1j * X1)) / (R1 + 1j * (X1 + Xm))
 V_th = V_ph * abs((1j * Xm) / (R1 + 1j * (X1 + Xm)))
@@ -88,7 +120,7 @@ def get_pf(s):
     Z = (R_th + R2/s) + 1j*(X_th + X2)
     return np.cos(np.angle(Z))
 
-# --- STICKY INFO PANEL ---
+# --- MODE DISPLAY (CARD) ---
 mode = "Motoring"
 if s_oper < 0:
     mode = "Generating"
@@ -96,58 +128,76 @@ elif s_oper > 1:
     mode = "Braking"
 
 st.markdown(f"""
-<div class="sticky">
-<b>Mode:</b> {mode} &nbsp; | &nbsp;
+<div class="card">
+<b>Mode:</b> {mode} <br>
 <b>Speed:</b> {Ns*(1-s_oper):.0f} RPM
 </div>
 """, unsafe_allow_html=True)
 
-# --- TABS FOR CLEAN UI ---
-tab1, tab2, tab3 = st.tabs(["📈 Torque", "📊 Performance", "🎓 Explain"])
+# --- PAGE CONTENT ---
+if st.session_state.page == "Torque":
+    st.markdown('<div class="card">', unsafe_allow_html=True)
 
-# --- TAB 1: TORQUE ---
-with tab1:
     s = np.linspace(-1, 2, 400)
     T = [get_torque(x) for x in s]
     N = Ns * (1 - s)
 
     fig, ax = plt.subplots()
     ax.plot(N, T)
-
-    # Operating point
     ax.scatter(Ns*(1-s_oper), get_torque(s_oper))
 
-    ax.axhline(0)
-    ax.axvline(Ns, linestyle='--')
-
-    ax.set_xlabel("Speed")
-    ax.set_ylabel("Torque")
     ax.set_title("Torque-Speed")
-
     st.pyplot(fig, use_container_width=True)
 
-# --- TAB 2: PERFORMANCE ---
-with tab2:
+    st.markdown('</div>', unsafe_allow_html=True)
+
+elif st.session_state.page == "Performance":
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+
     s = np.linspace(-1, 2, 300)
     N = Ns * (1 - s)
 
-    fig1, ax1 = plt.subplots()
-    ax1.plot(N, [get_current(x) for x in s])
-    ax1.set_title("Current")
-    st.pyplot(fig1, use_container_width=True)
+    fig, ax = plt.subplots()
+    ax.plot(N, [get_current(x) for x in s])
+    ax.set_title("Current")
+    st.pyplot(fig, use_container_width=True)
 
-    fig2, ax2 = plt.subplots()
-    ax2.plot(N, [get_pf(x) for x in s])
-    ax2.set_title("Power Factor")
-    st.pyplot(fig2, use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-# --- TAB 3: STUDENT MODE ---
-with tab3:
-    st.subheader("🎓 Auto Explanation")
+elif st.session_state.page == "Explain":
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+
+    st.subheader("🎓 Explanation")
 
     if s_oper < 0:
-        st.success("Generating Mode: Power flows back to supply.")
+        st.success("Generating: Power returned to supply.")
     elif s_oper > 1:
-        st.error("Braking Mode: Strong reverse torque.")
+        st.error("Braking: High reverse torque.")
     else:
-        st.info("Motoring Mode: Normal operation.")
+        st.info("Motoring: Normal operation.")
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# --- BOTTOM NAVIGATION ---
+st.markdown(f"""
+<div class="bottom-nav">
+    <div class="nav-btn">⚡ Torque</div>
+    <div class="nav-btn">📊 Performance</div>
+    <div class="nav-btn">🎓 Explain</div>
+</div>
+""", unsafe_allow_html=True)
+
+# --- CLICK HANDLING ---
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    if st.button("⚡"):
+        set_page("Torque")
+
+with col2:
+    if st.button("📊"):
+        set_page("Performance")
+
+with col3:
+    if st.button("🎓"):
+        set_page("Explain")
