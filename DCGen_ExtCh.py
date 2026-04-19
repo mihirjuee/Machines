@@ -26,11 +26,10 @@ st.header("Machine Parameters")
 
 phi = st.slider("Flux per pole (ϕ in Wb)", 0.01, 0.2, 0.05)
 N = st.slider("Speed (N in RPM)", 200, 2000, 1000)
-k = st.sidebar.slider("Machine constant (k)", 0.5, 5.0, 1.0)
-V = k * phi * N
-R_load = st.sidebar.slider("Load Resistance (Ohm)", 1, 100, 20)
 Ra = st.sidebar.slider("Armature Resistance (Ohm)", 0.1, 5.0, 1.0)
-
+k = st.sidebar.slider("Machine constant (k)", 0.5, 5.0, 1.0)
+R_load = st.sidebar.slider("Load Resistance (Ohm)", 1, 100, 20)
+V = k * phi * N
 # ================= CIRCUITS =================
 
 def separately_excited():
