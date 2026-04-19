@@ -10,7 +10,7 @@ import numpy as np
 # ================= PAGE =================
 st.set_page_config(page_title="DC Generator Virtual Lab", page_icon="logo.png", layout="wide")
 
-st.title("⚡ DC Generator Virtual Lab (All Types + Characteristics)")
+st.title("⚡ DC Generator Virtual Lab (External Characteristics)")
 
 # ================= SIDEBAR =================
 gen_type = st.sidebar.selectbox(
