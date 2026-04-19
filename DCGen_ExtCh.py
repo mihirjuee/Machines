@@ -33,7 +33,7 @@ V = k * phi * N
 # ================= CIRCUITS =================
 
 def separately_excited():
-    d = schemdraw.Drawing(unit=1.5)
+    d = schemdraw.Drawing()
     
     
     d += elm.Line().up(0.1)
