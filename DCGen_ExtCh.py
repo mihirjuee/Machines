@@ -80,7 +80,8 @@ def compound_generator():
     d += elm.SourceV().label("Ea")
     d += elm.Resistor().label("Ra")
 
-    node = d += elm.Dot()
+    node = elm.Dot()
+    d += node
 
     d += elm.Resistor().right().label("Series Field")
     d += elm.Resistor().down().label("Load")
