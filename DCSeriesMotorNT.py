@@ -3,7 +3,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import schemdraw
 import schemdraw.elements as elm
-
+st.markdown("""
+    <style>
+    .stApp {
+        background: linear-gradient(to right, #e3f2fd, #ffffff);
+    }
+    </style>
+""", unsafe_allow_html=True)
 st.set_page_config(page_title="DC Series Motor", layout="wide")
 st.title("⚡ DC Series Motor Torque-Speed Characteristics")
 
