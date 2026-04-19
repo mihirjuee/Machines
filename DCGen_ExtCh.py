@@ -137,7 +137,7 @@ def compound_generator():
 # ================= CHARACTERISTICS =================
 
 def characteristics(gen_type):
-    IL = np.linspace(0, 10, 60)
+    IL = np.linspace(0, 10, 500)
 
     if gen_type == "Separately Excited":
         Vt = V -  IL * Ra
