@@ -35,7 +35,7 @@ V = k * phi * N
 def separately_excited():
     d = schemdraw.Drawing(unit=2)
 
-    d += elm.SourceV().label("Ea")
+    d += elm.Motor().label("Ea")
     d += elm.Resistor().label("Ra")
     d += elm.Line().right()
     d += elm.Resistor().down().label("Load")
@@ -48,7 +48,7 @@ def shunt_generator():
     d = schemdraw.Drawing(unit=2)
 
     # Armature
-    d += elm.SourceV().label("Ea")
+    d += elm.Motor().label("Ea")
     d += elm.Resistor().label("Ra")
 
     # Junction point (no node stored)
@@ -73,7 +73,7 @@ def shunt_generator():
 def series_generator():
     d = schemdraw.Drawing(unit=2)
 
-    d += elm.SourceV().label("Ea")
+    d += elm.Motor().label("Ea")
     d += elm.Resistor().label("Ra")
     d += elm.Resistor().label("Series Field")
     d += elm.Resistor().label("Load")
@@ -85,7 +85,7 @@ def compound_generator():
     d = schemdraw.Drawing(unit=2)
 
     # ===== ARMATURE =====
-    d += elm.SourceV().label("Ea")
+    d += elm.Motor().label("Ea")
     d += elm.Resistor().label("Ra")
 
     # Junction point
