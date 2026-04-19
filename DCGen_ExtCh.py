@@ -153,7 +153,7 @@ else:
 
 # -------- CIRCUIT --------
 #with col1:
-    st.subheader("🔌 Circuit Diagram")
+st.subheader("🔌 Circuit Diagram")
 
     d.draw()
     fig = plt.gcf()
@@ -162,7 +162,7 @@ else:
 
 # -------- CHARACTERISTICS --------
 #with col2:
-    st.subheader("📉 External Characteristics")
+st.subheader("📉 External Characteristics")
 
     fig2, ax = plt.subplots()
 
