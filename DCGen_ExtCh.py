@@ -33,20 +33,29 @@ V = k * phi * N
 # ================= CIRCUITS =================
 
 def separately_excited():
-    d = schemdraw.Drawing()
+    # 'unit=1.5' makes the drawing more compact than the default
+    d = schemdraw.Drawing(unit=1.5)
     
+    # Armature circuit
+    d += (M := elm.Motor(kind='dc').label("Eg"))
+    d += elm.Resistor().label("Ra")
+    d += (top_line := elm.Line().right())
+    d += (load := elm.Resistor().down().label("Load"))
+    d += (bottom_line := elm.Line().left())
+    d += elm.Line().up().at(M.start) # Closing the loop
     
-    d += elm.Line().up(0.1)
-    d += elm.Motor(size=1.0).label("Eg")
-    d += elm.Line().up(0.1)
-    d += elm.Resistor(size=0.1).label("Ra")
+    # Separate Field circuit
+    d.move(-2, 0) # Move to left to draw the field
+    d += elm.SourceV().up().label("Vf")
     d += elm.Line().right()
-    d += elm.Line().down()
-    d += elm.Resistor(size=0.1).down().label("Load")
-    d += elm.Line().down(1.5)
+    d += elm.Inductor().down().label("Lf")
     d += elm.Line().left()
-    d += elm.Line().up(1.5)
+    
     return d
+
+# Render the drawing
+d = separately_excited()
+d.draw()
 
 
 def shunt_generator():
