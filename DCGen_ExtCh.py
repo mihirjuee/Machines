@@ -148,7 +148,7 @@ def characteristics(gen_type):
         return IL, Vt
 
     elif gen_type == "Series Generator":
-        Vt = V + 2.0 * IL - 0.7 * IL**1.3
+        Vt = 5 + 1.8 * IL - 0.4 * IL**1.5
         Vt = np.maximum(Vt, 0)
         return IL, Vt
 
