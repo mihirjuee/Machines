@@ -211,6 +211,7 @@ else:
     ax.set_ylabel("Terminal Voltage (Vt)")
     ax.set_title("Compound Generator Characteristics")
     ax.grid(True)
+    ax.set_ylim(bottom=0)
     ax.legend()
 
 st.pyplot(fig2)
