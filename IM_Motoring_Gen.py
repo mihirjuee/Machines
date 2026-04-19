@@ -1,96 +1,237 @@
+# 🔥 MUST BE FIRST
+import matplotlib
+matplotlib.use('Agg')
+
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.optimize import fminbound
 import schemdraw
 import schemdraw.elements as elm
 
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="IM Lab Pro", page_icon="⚡", layout="centered")
 
-# --- LIGHT MODE CSS ---
-if "desktop_mode" not in st.session_state: st.session_state.desktop_mode = False
+# --- SESSION ---
+if "page" not in st.session_state:
+    st.session_state.page = "Torque"
+
+if "desktop_mode" not in st.session_state:
+    st.session_state.desktop_mode = False
+
 layout_width = "1200px" if st.session_state.desktop_mode else "700px"
 
+# --- APP CSS ---
 st.markdown(f"""
 <style>
-[data-testid="stAppViewContainer"] {{ background: #f8fafc; color: #1e293b; }}
-.card {{ background: #ffffff; padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #e2e8f0; box-shadow: 0px 2px 5px rgba(0,0,0,0.05); }}
-.header {{ font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 20px; color: #0284c7; }}
-.main > div {{ max-width: {layout_width} !important; }}
+[data-testid="stAppViewContainer"] {{
+    background: #f1f5f9;
+}}
+
+.main > div {{
+    max-width: {layout_width} !important;
+}}
+
+/* HEADER */
+.header {{
+    font-size: 22px;
+    font-weight: bold;
+    text-align: center;
+    padding: 10px;
+    color: #0284c7;
+}}
+
+/* CARD */
+.card {{
+    background: white;
+    padding: 15px;
+    border-radius: 15px;
+    margin-bottom: 15px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0px 3px 8px rgba(0,0,0,0.05);
+}}
+
+/* STICKY STATUS BAR */
+.status {{
+    position: sticky;
+    top: 0;
+    background: #ffffff;
+    padding: 10px;
+    border-bottom: 1px solid #e2e8f0;
+    z-index: 999;
+}}
+
+/* FLOAT BUTTON PANEL */
+.floating {{
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    z-index: 999;
+}}
+
+/* BOTTOM NAV */
+.bottom-nav {{
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background: white;
+    border-top: 1px solid #ddd;
+    display: flex;
+    justify-content: space-around;
+    padding: 8px 0;
+    z-index: 999;
+}}
+
+.nav-item {{
+    text-align: center;
+    font-size: 13px;
+}}
+
 </style>
 """, unsafe_allow_html=True)
 
-# --- SIDEBAR: PARAMETERS ---
+# --- SIDEBAR ---
 with st.sidebar:
     if st.button("🖥️ Toggle Desktop View"):
         st.session_state.desktop_mode = not st.session_state.desktop_mode
         st.rerun()
-    st.header("⚙️ Machine Parameters")
-    V = st.slider("Voltage (L-L V)", 100, 500, 400)
-    f = st.slider("Frequency (Hz)", 10, 100, 50)
-    P = st.selectbox("Poles", [2, 4, 6, 8], index=1)
-    st.divider()
-    st.header("⚙️ Equivalent Circuit")
-    R1 = st.slider("Stator R1 [Ω]", 0.01, 5.0, 0.5)
-    X1 = st.slider("Stator X1 [Ω]", 0.1, 5.0, 1.0)
-    R2 = st.slider("Rotor R2 [Ω]", 0.01, 5.0, 0.8)
-    X2 = st.slider("Rotor X2 [Ω]", 0.1, 5.0, 1.2)
-    Xm = st.slider("Magnetizing Xm [Ω]", 5.0, 100.0, 30.0)
 
-# --- ENGINE LOGIC ---
+    st.header("⚙️ Parameters")
+    V = st.slider("Voltage", 100, 500, 400)
+    f = st.slider("Frequency", 10, 100, 50)
+    P = st.selectbox("Poles", [2, 4, 6, 8], index=1)
+
+    st.divider()
+
+    R1 = st.slider("R1", 0.01, 5.0, 0.5)
+    X1 = st.slider("X1", 0.1, 5.0, 1.0)
+    R2 = st.slider("R2", 0.01, 5.0, 0.8)
+    X2 = st.slider("X2", 0.1, 5.0, 1.2)
+    Xm = st.slider("Xm", 5.0, 100.0, 30.0)
+
+# --- ENGINE ---
 V_ph = V / np.sqrt(3)
 Ns = 120 * f / P
 omega_s = (2 * np.pi * Ns) / 60
+
 Z_th = ((1j * Xm) * (R1 + 1j * X1)) / (R1 + 1j * (X1 + Xm))
 V_th = V_ph * abs((1j * Xm) / (R1 + 1j * (X1 + Xm)))
 R_th, X_th = Z_th.real, Z_th.imag
 
+def safe_s(s):
+    return np.where(abs(s) < 1e-6, 1e-6, s)
+
 def get_metrics(s):
-    s = np.where(abs(s) < 1e-6, 1e-6, s)
+    s = safe_s(s)
     denom = ((R_th + R2/s)**2 + (X_th + X2)**2)
     torque = (3 * V_th**2 * (R2/s)) / (omega_s * denom)
     Z = (R_th + R2/s) + 1j*(X_th + X2)
-    current = V_th / abs(Z)
+    current = V_th / np.abs(Z)
     return torque, current
 
-# --- NAVIGATION ---
-if "page" not in st.session_state: st.session_state.page = "Torque"
-col1, col2, col3 = st.columns(3)
-if col1.button("⚡ Torque"): st.session_state.page = "Torque"
-if col2.button("📊 Performance"): st.session_state.page = "Performance"
-if col3.button("🎓 Explain"): st.session_state.page = "Explain"
+# --- CONTROL ---
+s_oper = st.slider("🎛 Slip Control", -0.5, 1.5, 0.05, step=0.01)
 
-st.markdown('<div class="header">Induction Motor Lab Pro</div>', unsafe_allow_html=True)
+# --- MODE ---
+mode = "Motoring"
+if s_oper < 0:
+    mode = "Generating"
+elif s_oper > 1:
+    mode = "Braking"
 
-# --- PAGE CONTENT ---
-plt.style.use('default')
+# --- STATUS BAR ---
+st.markdown(f"""
+<div class="status">
+<b>Mode:</b> {mode} | <b>Speed:</b> {Ns*(1-s_oper):.0f} RPM
+</div>
+""", unsafe_allow_html=True)
+
+# --- HEADER ---
+st.markdown('<div class="header">⚡ Induction Motor Lab Pro</div>', unsafe_allow_html=True)
+
+# --- DATA ---
 s_plot = np.linspace(-1, 2, 400)
 T_plot, I_plot = get_metrics(s_plot)
 N_plot = Ns * (1 - s_plot)
 
+# --- PAGES ---
 if st.session_state.page == "Torque":
-    st.subheader("🔌 Equivalent Circuit")
+
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+
     d = schemdraw.Drawing()
-    d.add(elm.SourceV().label("V₁")); d.add(elm.Resistor().label("R₁")); d.add(elm.Inductor().label("X₁"))
-    d.add(elm.Inductor().at((2,1)).label("Xm").down()); d.add(elm.Resistor().at((4,0)).label("R₂/s").right()); d.add(elm.Inductor().label("X₂"))
+    d += elm.SourceV().label("V₁")
+    d += elm.Resistor().label("R₁")
+    d += elm.Inductor().label("X₁")
+    d += elm.Dot()
+
+    d.push()
+    d += elm.Line().up()
+    d += elm.Inductor().label("Xm")
+    d += elm.Line().down()
+    d.pop()
+
+    d += elm.Resistor().label("R₂/s")
+    d += elm.Inductor().label("X₂")
+
     st.pyplot(d.draw())
-    
-    
+
     fig, ax = plt.subplots(figsize=(6,3))
-    ax.plot(N_plot, T_plot, color='#0284c7', lw=2)
-    ax.fill_between(N_plot, T_plot, 0, where=(s_plot < 0), color='green', alpha=0.1, label="Generating")
-    ax.fill_between(N_plot, T_plot, 0, where=(s_plot >= 0) & (s_plot <= 1), color='blue', alpha=0.1, label="Motoring")
-    ax.fill_between(N_plot, T_plot, 0, where=(s_plot > 1), color='orange', alpha=0.1, label="Braking")
-    ax.set_title("Torque-Speed Characteristic"); ax.set_xlabel("Speed (RPM)"); ax.set_ylabel("Torque (Nm)"); ax.legend()
+    ax.plot(N_plot, T_plot)
+
+    ax.scatter(Ns*(1-s_oper), get_metrics(s_oper)[0])
+
+    ax.fill_between(N_plot, T_plot, 0, where=(s_plot < 0), alpha=0.1)
+    ax.fill_between(N_plot, T_plot, 0, where=(s_plot >= 0)&(s_plot<=1), alpha=0.1)
+    ax.fill_between(N_plot, T_plot, 0, where=(s_plot > 1), alpha=0.1)
+
+    ax.set_title("Torque-Speed")
     st.pyplot(fig)
-    
+
+    st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.page == "Performance":
+
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+
     fig, ax = plt.subplots(figsize=(6,3))
-    ax.plot(s_plot, I_plot, color='#fbbf24', lw=2)
-    ax.set_title("Stator Current vs Slip"); ax.set_xlabel("Slip"); ax.set_ylabel("Current (A)")
+    ax.plot(s_plot, I_plot)
+    ax.set_title("Current vs Slip")
     st.pyplot(fig)
 
+    st.markdown('</div>', unsafe_allow_html=True)
+
 elif st.session_state.page == "Explain":
-    st.markdown('<div class="card"><b>Modes Explained:</b><br>• <b>Generating (s < 0):</b> Speed > Sync, power back to grid.<br>• <b>Motoring (0 < s < 1):</b> Normal operation.<br>• <b>Braking (s > 1):</b> Rapid deceleration via plugging.</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+
+    if s_oper < 0:
+        st.success("Generating Mode → Power returned to supply")
+    elif s_oper > 1:
+        st.error("Braking Mode → Plugging action")
+    else:
+        st.info("Motoring Mode → Normal operation")
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# --- BOTTOM NAV ---
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    if st.button("⚡"):
+        st.session_state.page = "Torque"
+
+with col2:
+    if st.button("📊"):
+        st.session_state.page = "Performance"
+
+with col3:
+    if st.button("🎓"):
+        st.session_state.page = "Explain"
+
+st.markdown("""
+<div class="bottom-nav">
+<div class="nav-item">⚡ Torque</div>
+<div class="nav-item">📊 Performance</div>
+<div class="nav-item">🎓 Explain</div>
+</div>
+""", unsafe_allow_html=True)
