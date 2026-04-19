@@ -116,19 +116,20 @@ def compound_generator():
 
     # ===== SERIES FIELD + LOAD PATH =====
     d.push()
-    d += elm.Resistor().right().label("Series Field")
+    d += elm.Inductor().right().label("Series Field")
     d += elm.Resistor().down().label("Load")
     d.pop()
 
     # ===== SHUNT FIELD (PARALLEL) =====
     d.push()
     d += elm.Line().down(0.1)
-    d += elm.Resistor().label("Shunt Field")
+    d += elm.Inductor(loops=5)).label("Shunt Field")
     d.push()
     d += elm.Line().right()
+    d += elm.Line().right(0.1)
     d.pop()
     d += elm.Line().left(4)
-    d += elm.Line().up()
+    d += elm.Line().up(2.1)
     d.pop()
     return d
 
