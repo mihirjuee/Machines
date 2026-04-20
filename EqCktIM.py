@@ -51,7 +51,7 @@ st.subheader("Torque-Speed Curve with Operating Point")
 # =========================
 # SIDEBAR
 # =========================
-st.sidebar.header("⚙️ Motor Parameters(Select Realistic Value)")
+st.sidebar.header("⚙️ Motor Parameters(Set Value)")
 
 V_line = st.sidebar.slider("Line Voltage (V)", 200, 500, 400)
 f = st.sidebar.slider("Frequency (Hz)", 40, 60, 50)
