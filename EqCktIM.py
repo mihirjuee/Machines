@@ -129,7 +129,7 @@ for s in s_vals:
     P_ag_op = 3 * (abs(I2_op)**2) * (R2/slip)
     I = V_phase / Zt
    
-    T = P_ag / ws   # ✅ correct torque
+    T = P_ag_op / ws   # ✅ correct torque
 
     torque_vals.append(T)
 
