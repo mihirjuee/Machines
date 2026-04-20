@@ -88,9 +88,20 @@ Z2_op = complex(R2/slip, X2)
 Zp_op = (Z2_op * Zm) / (Z2_op + Zm)
 Zt_op = Z1 + Zp_op
 
-I_op = V_phase / Zt_op
-P_ag_op = 3 * (abs(I_op)**2) * (R2/slip)
+I1_op = V_phase / Zt_op   # stator current
+
+# voltage across parallel branch
+V_parallel = V_phase - I1_op * Z1
+
+# rotor current (IMPORTANT FIX)
+I2_op = V_parallel / Z2_op
+
+# correct air-gap power
+P_ag_op = 3 * (abs(I2_op)**2) * (R2/slip)
+
+# torque
 T_op = P_ag_op / ws
+I_op = V_phase / Zt_op
 
 operating_speed = (1 - slip) * Ns
 
