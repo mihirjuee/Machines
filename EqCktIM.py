@@ -171,7 +171,7 @@ idx = np.argmax(torque_vals)
 ax.scatter(speed[idx], torque_vals[idx], color="orange", label="Max Torque")
 
 if operating_speed < speed[idx]:
-    st.error(f"⚠️ Warning: Slip ({slip:.2f}) is beyond breakdown slip ({s_max:.2f})")
+    st.error(f"⚠️ Warning: Slip ({slip:.2f}) is beyond breakdown slip")
 
 elif abs(operating_speed - speed[idx]) < 0.05:
     st.warning("⚡ Operating near maximum (breakdown) torque region")
