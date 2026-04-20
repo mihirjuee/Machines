@@ -211,6 +211,7 @@ d.pop()
 d.push()
 # Xm branch
 d += elm.Line().right()
+d += elm.Dot()
 d += elm.Line().down()
 d += elm.Inductor().label("Xm")
 
