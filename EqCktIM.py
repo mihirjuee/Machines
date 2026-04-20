@@ -113,26 +113,36 @@ torque_vals = []
 
 for s in s_vals:
 
+    # Rotor branch impedance (depends on slip)
     Z2 = complex(R2/s, X2)
+
+    # Magnetizing branch
     Zm = 1 / (1/Rc + 1/complex(0, Xm))
+
+    # Parallel combination
     Zp = (Z2 * Zm) / (Z2 + Zm)
+
+    # Total impedance
     Zt = Z1 + Zp
-    I1_op = V_phase / Zt_op   # stator current
 
-    # voltage across parallel branch
-    V_parallel = V_phase - I1_op * Z1
+    # Stator current
+    I1 = V_phase / Zt
 
-    # rotor current (IMPORTANT FIX)
-    I2_op = V_parallel / Z2_op
+    # Voltage across parallel branch
+    V_parallel = V_phase - I1 * Z1
 
-    # correct air-gap power
-    P_ag_op = 3 * (abs(I2_op)**2) * (R2/slip)
-    I = V_phase / Zt
-   
-    T = P_ag_op / ws   # ✅ correct torque
+    # Rotor current
+    I2 = V_parallel / Z2
+
+    # Air-gap power (CORRECT)
+    P_ag = 3 * (abs(I2)**2) * (R2/s)
+
+    # Torque
+    T = P_ag / ws
 
     torque_vals.append(T)
 
+# Speed
 speed = (1 - s_vals) * Ns
 
 # =========================
