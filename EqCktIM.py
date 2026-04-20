@@ -56,13 +56,13 @@ st.sidebar.header("⚙️ Motor Parameters(Set realistic value)")
 V_line = st.sidebar.slider("Line Voltage (V)", 200, 500, 400)
 f = st.sidebar.slider("Frequency (Hz)", 40, 60, 50)
 
-R1 = st.sidebar.slider("R1 (Ω)", 0.1, 5.0, 0.5)
-X1 = st.sidebar.slider("X1 (Ω)", 0.1, 5.0, 1.0)
+R1 = st.sidebar.slider("R1 (Ω)", 0.1, 10.0, 0.5)
+X1 = st.sidebar.slider("X1 (Ω)", 0.1, 10.0, 1.0)
 
-R2 = st.sidebar.slider("R2 (Ω)", 0.1, 5.0, 0.4)
-X2 = st.sidebar.slider("X2 (Ω)", 0.1, 5.0, 0.8)
+R2 = st.sidebar.slider("R2 (Ω)", 0.1,10.0, 0.4)
+X2 = st.sidebar.slider("X2 (Ω)", 0.1, 10.0, 0.8)
 
-Xm = st.sidebar.slider("Xm (Ω)", 5.0, 100.0, 30.0)
+Xm = st.sidebar.slider("Xm (Ω)", 5.0, 200.0, 30.0)
 Rc = st.sidebar.slider("Rc (Ω)", 10.0, 2000.0, 150.0)
 
 slip = st.sidebar.slider("Operating Slip (s)", 0.01, 1.0, 0.05)
