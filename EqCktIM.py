@@ -117,10 +117,18 @@ for s in s_vals:
     Zm = 1 / (1/Rc + 1/complex(0, Xm))
     Zp = (Z2 * Zm) / (Z2 + Zm)
     Zt = Z1 + Zp
+    I1_op = V_phase / Zt_op   # stator current
 
+    # voltage across parallel branch
+    V_parallel = V_phase - I1_op * Z1
+
+    # rotor current (IMPORTANT FIX)
+    I2_op = V_parallel / Z2_op
+
+    # correct air-gap power
+    P_ag_op = 3 * (abs(I2_op)**2) * (R2/slip)
     I = V_phase / Zt
-    P_ag = 3 * (abs(I)**2) * (R2/s)
-
+   
     T = P_ag / ws   # ✅ correct torque
 
     torque_vals.append(T)
