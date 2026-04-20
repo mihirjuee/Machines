@@ -192,46 +192,37 @@ st.pyplot(fig)
 # =========================
 st.subheader("🔌 IEEE Style Equivalent Circuit")
 
-d = schemdraw.Drawing()
+with schemdraw.Drawing() as d:
+    # Primary side
+    d += (V := elm.SourceV().label("Vph"))
+    d += elm.Resistor().right().label("R1")
+    d += elm.Inductor().right().label("X1")
+    
+    # Node for shunt branch
+    d += (dot1 := elm.Dot())
+    d.push()
+    
+    # Shunt branch (Rc and Xm in parallel)
+    d += elm.Line().down()
+    d += elm.Resistor().label("Rc")
+    d += elm.Ground()
+    
+    d.pop()
+    d.push()
+    
+    d += elm.Line().down()
+    d += elm.Inductor().label("Xm")
+    d += elm.Ground()
+    
+    d.pop()
+    
+    # Rotor branch
+    d += elm.Resistor().right().label("R2'/s")
+    d += elm.Inductor().right().label("X2'")
+    d += elm.Ground()
 
-d += elm.SourceV().label("Vph")
-d += elm.Resistor().right().label("R1")
-d += elm.Inductor().right().label("X1")
-
-d += elm.Dot()
-d.push()
-
-# Rc branch
-d += elm.Line().down()
-d += elm.Resistor().label("Rc")
-d += elm.Ground()
-
-d.pop()
-d.push()
-
-# Xm branch
-d += elm.Line().down()
-d += elm.Inductor().label("Xm")
-d += elm.Ground()
-
-d.pop()
-
-# Rotor branch
-d += elm.Line().right()
-d += elm.Resistor().label("R2/s")
-d += elm.Inductor().label("X2")
-d += elm.Ground()
-
-# =========================
-# SAFE RENDERING (IMPORTANT)
-# =========================
-drawing = d.draw()
-
-# If matplotlib figure exists → use it
-if hasattr(drawing, "figure"):
-    st.pyplot(drawing.figure)
-else:
-    st.pyplot(drawing)
+# Display in Streamlit
+st.pyplot(d.fig)
 
 # =========================
 # THEORY
