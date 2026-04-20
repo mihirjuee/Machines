@@ -204,7 +204,7 @@ d += elm.Dot()
 d.push()
 
 # Rc branch
-d += elm.Line().down()
+d += elm.Line().down(0.1)
 d += elm.Resistor().label("Rc")
 
 d.pop()
@@ -212,7 +212,7 @@ d.push()
 # Xm branch
 d += elm.Line().right()
 d += elm.Dot()
-d += elm.Line().down()
+d += elm.Line().down(0.1)
 d += elm.Inductor().label("Xm")
 
 d.pop()
