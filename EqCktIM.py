@@ -222,7 +222,7 @@ d += elm.Line().right()
 d += elm.Inductor().label("X2")
 d += elm.Resistor().label("R2/s")
 d += elm.Line().down()
-d += elm.Line().left(6)
+d += elm.Line().left(10)
 d += elm.Line().up()
 # =========================
 # SAFE RENDER (NO STREAMLIT CRASH)
