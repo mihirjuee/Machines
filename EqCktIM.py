@@ -115,7 +115,7 @@ eff = P_mech / P_input
 # Torque
 Ns = 120 * f / 4
 ws = 2 * np.pi * Ns / 60
-Torque = P_mech / ws
+Torque = P_ag / ws
 
 # =========================
 # METRICS
