@@ -7,7 +7,7 @@ import schemdraw.elements as elm
 # =========================
 # ⚙️ PAGE CONFIG
 # =========================
-st.set_page_config(page_title="IM Equivalent Circuit Lab", page_icon="⚡", layout="wide")
+st.set_page_config(page_title="IM Equivalent Circuit Lab", page_icon="logo.png", layout="wide")
 
 # =========================
 # 🎨 STYLE
