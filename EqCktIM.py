@@ -222,10 +222,16 @@ d += elm.Resistor().label("R2/s")
 d += elm.Inductor().label("X2")
 d += elm.Ground()
 
-fig = d.draw()
+# =========================
+# SAFE RENDERING (IMPORTANT)
+# =========================
+drawing = d.draw()
 
-# ✅ correct rendering
-st.pyplot(fig)
+# If matplotlib figure exists → use it
+if hasattr(drawing, "figure"):
+    st.pyplot(drawing.figure)
+else:
+    st.pyplot(drawing)
 
 # =========================
 # THEORY
