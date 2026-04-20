@@ -17,7 +17,7 @@ st.markdown(""" <style> .main { background: linear-gradient(120deg, #1f4037, #2c
 # =========================
 # TITLE
 # =========================
-st.title("⚡ 3-Phase Induction Motor Performance Evaluation using Equivalent Circuit Parameters")
+st.title("⚡ 3-Phase Induction Motor Performance Evaluation")
 st.subheader("Torque-Speed Curve with Operating Point")
 
 # =========================
