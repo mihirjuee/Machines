@@ -190,18 +190,34 @@ st.pyplot(fig)
 # =========================
 # CIRCUIT DIAGRAM
 # =========================
-st.subheader("🔌 Equivalent Circuit")
+st.subheader("🔌 IEEE Style Equivalent Circuit")
 
 d = schemdraw.Drawing()
 
+# =========================
+# INPUT SUPPLY
+# =========================
 d += elm.SourceV().label("Vph")
+
+# =========================
+# STATOR IMPEDANCE (series)
+# =========================
 d += elm.Resistor().right().label("R1")
 d += elm.Inductor().right().label("X1")
 
+# Node after stator
 d += elm.Dot()
+
+# =========================
+# SPLIT NODE (parallel branches)
+# =========================
 d.push()
 
-# Rc branch
+# =========================
+# MAGNETIZING BRANCH (Rc || Xm)
+# =========================
+
+# Upper branch Rc
 d += elm.Line().down()
 d += elm.Resistor().label("Rc")
 d += elm.Ground()
@@ -209,20 +225,26 @@ d += elm.Ground()
 d.pop()
 d.push()
 
-# Xm branch
+# Lower branch Xm
 d += elm.Line().down()
 d += elm.Inductor().label("Xm")
 d += elm.Ground()
 
 d.pop()
 
-# Rotor branch
+# =========================
+# ROTOR BRANCH
+# =========================
 d += elm.Line().right()
 d += elm.Resistor().label("R2/s")
 d += elm.Inductor().label("X2")
 d += elm.Ground()
 
-st.pyplot(d.draw())
+# =========================
+# RENDER (IMPORTANT FIX)
+# =========================
+fig = d.draw()
+st.pyplot(fig.figure)
 
 # =========================
 # THEORY
