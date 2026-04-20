@@ -12,46 +12,35 @@ st.set_page_config(page_title="IM Equivalent Circuit Lab", page_icon="logo.png",
 # =========================
 # 🎨 STYLE
 # =========================
-
-
+# 1. Custom Styling for Readability
 st.markdown("""
 <style>
-/* 1. Modern Gradient Background with subtle noise/texture feel */
-.stApp {
-    background: radial-gradient(circle at top right, #1a2a6c, #b21f1f, #fdbb2d);
-    background-attachment: fixed;
-}
-
-/* 2. Glassmorphism effect for content containers */
-[data-testid="stVerticalBlock"] > [style*="flex-direction: column"] > [data-testid="stVerticalBlock"] {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 15px;
-    padding: 20px;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-}
-
-/* 3. Sleek Sidebar */
-section[data-testid="stSidebar"] {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(5px);
-}
-
-/* 4. Better Typography */
-h1, h2, h3 {
-    color: #ffffff !important;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-    font-family: 'Segoe UI', sans-serif;
-}
-
-/* 5. Custom Metric Cards */
-.stMetric {
-    background: rgba(0, 0, 0, 0.2);
-    padding: 15px;
-    border-radius: 12px;
-    border-left: 5px solid #00ffcc;
-}
+    /* Dark gradient background */
+    .stApp {
+        background: linear-gradient(120deg, #1f4037, #2c7744);
+    }
+    
+    /* Ensure all text is high-contrast white */
+    .main * {
+        color: #ffffff !important;
+    }
+    
+    /* Clean, professional Sidebar */
+    section[data-testid="stSidebar"] {
+        background-color: #f7f9fb !important;
+    }
+    section[data-testid="stSidebar"] * {
+        color: #333333 !important; /* Sidebar text is black for readability */
+        font-weight: 500;
+    }
+    
+    /* Glassmorphism for Metric containers */
+    div[data-testid="stMetric"] {
+        background-color: rgba(255,255,255,0.15);
+        padding: 20px;
+        border-radius: 15px;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
 </style>
 """, unsafe_allow_html=True)
 
