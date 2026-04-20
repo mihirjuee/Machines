@@ -66,7 +66,7 @@ Xm = st.sidebar.slider("Xm (Ω)", 5.0, 100.0, 30.0)
 Rc = st.sidebar.slider("Rc (Ω)", 10.0, 500.0, 150.0)
 
 slip = st.sidebar.slider("Operating Slip (s)", 0.01, 1.0, 0.05)
-
+P = st.sidebar.slider("No. of poles (P)", 0.01, 1.0, 0.05)
 
 # =========================
 # CALCULATIONS
@@ -75,7 +75,7 @@ V_phase = V_line / np.sqrt(3)
 
 Z1 = complex(R1, X1)
 
-Ns = 120 * f / 4
+Ns = 120 * f / P
 ws = 2 * np.pi * Ns / 60
 
 # Magnetizing + core loss branch
