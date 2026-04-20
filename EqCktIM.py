@@ -210,7 +210,7 @@ d += elm.Resistor().label("Rc")
 d.pop()
 d.push()
 # Xm branch
-d += elm.Line().right()
+d += elm.Line().right(0.5)
 d += elm.Dot()
 d += elm.Line().down(0.1)
 d += elm.Inductor().label("Xm")
