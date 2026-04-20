@@ -14,21 +14,42 @@ st.set_page_config(page_title="IM Equivalent Circuit Lab", page_icon="⚡", layo
 # =========================
 st.markdown("""
 <style>
+
+/* Main background (keep your gradient) */
 .main {
     background: linear-gradient(120deg, #1f4037, #2c7744);
     color: white;
 }
+
+/* ✅ LIGHT SIDEBAR */
 section[data-testid="stSidebar"] {
-    background: #1c1c1c;
+    background-color: #f7f9fb !important;
+    color: #000000 !important;
 }
-h1, h2, h3 {
-    color: #00ffcc;
+
+/* Sidebar text */
+section[data-testid="stSidebar"] * {
+    color: #000000 !important;
 }
+
+/* Sidebar sliders & labels */
+section[data-testid="stSidebar"] label {
+    color: #000000 !important;
+    font-weight: 500;
+}
+
+/* Improve metric cards */
 .stMetric {
-    background-color: rgba(255,255,255,0.08);
+    background-color: rgba(255,255,255,0.1);
     padding: 12px;
     border-radius: 10px;
 }
+
+/* Headings */
+h1, h2, h3 {
+    color: #00ffcc;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
