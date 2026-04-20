@@ -17,7 +17,7 @@ st.markdown("""
 <style>
     /* Dark gradient background */
     .stApp {
-        background: linear-gradient(120deg, #1f4037, #2c7744);
+        background: linear-gradient(135deg, #1f4037, #2c7744);
     }
     
     /* Ensure all text is high-contrast white */
