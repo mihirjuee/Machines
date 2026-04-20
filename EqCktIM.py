@@ -190,42 +190,49 @@ st.pyplot(fig)
 # =========================
 # CIRCUIT DIAGRAM
 # =========================
-st.subheader("🔌 Equivalent Circuit")
+import io
 
-# Initialize drawing
+st.subheader("🔌 IEEE Style Equivalent Circuit")
+
 d = schemdraw.Drawing()
 
-# Add components
-d += (V := elm.SourceV().label("Vph"))
+d += elm.SourceV().label("Vph")
 d += elm.Resistor().right().label("R1")
 d += elm.Inductor().right().label("X1")
 
-# Node for shunt branch
-d += (dot1 := elm.Dot())
+d += elm.Dot()
 d.push()
 
-# Shunt branch
+# Rc branch
 d += elm.Line().down()
 d += elm.Resistor().label("Rc")
 d += elm.Ground()
-d.pop()
 
+d.pop()
 d.push()
+
+# Xm branch
 d += elm.Line().down()
 d += elm.Inductor().label("Xm")
 d += elm.Ground()
+
 d.pop()
 
 # Rotor branch
-d += elm.Resistor().right().label("R2'/s")
-d += elm.Inductor().right().label("X2'")
+d += elm.Line().right()
+d += elm.Resistor().label("R2/s")
+d += elm.Inductor().label("X2")
 d += elm.Ground()
 
-# --- FIX: Explicitly draw the figure ---
-fig = d.draw() 
+# =========================
+# SAFE RENDER (NO STREAMLIT CRASH)
+# =========================
 
-# Pass the returned figure object to Streamlit
-st.pyplot(fig)
+buf = io.BytesIO()
+d.save(buf)   # save as image in memory
+buf.seek(0)
+
+st.image(buf)
 
 # =========================
 # THEORY
