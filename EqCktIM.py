@@ -162,7 +162,7 @@ c3.metric("Rotor Current (A)", f"{abs(I_op):.2f}")
 st.subheader("⚡ Power Flow")
 
 P_input = 3 * V_phase * abs(I_op) * np.cos(np.angle(I_op))
-P_core = 3 * (abs(V_phase)**2) / Rc
+P_core = 3 * (abs(V_parallel)**2) / Rc
 P_mech = P_ag_op * (1 - slip)
 
 st.info(f"""
