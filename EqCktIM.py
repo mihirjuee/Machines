@@ -198,7 +198,7 @@ d = schemdraw.Drawing()
 
 d += elm.SourceV().label("Vph")
 d += elm.Resistor().right().label("R1")
-d += elm.Inductor().right().label("X1")
+d += elm.Inductor().right().label("jX1")
 
 d += elm.Dot()
 d.push()
@@ -213,13 +213,13 @@ d.push()
 d += elm.Line().right(1)
 d += elm.Dot()
 d += elm.Line().down(0.1)
-d += elm.Inductor().label("Xm")
+d += elm.Inductor().label("jXm")
 
 d.pop()
 
 # Rotor branch
 d += elm.Line().right()
-d += elm.Inductor().label("X2")
+d += elm.Inductor().label("jX2")
 d += elm.Resistor().label("R2/s")
 d += elm.Line().down()
 d += elm.Line().left(15)
