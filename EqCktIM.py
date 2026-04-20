@@ -45,7 +45,7 @@ h1, h2, h3 {
 # =========================
 # TITLE
 # =========================
-st.title("⚡ Induction Motor Equivalent Circuit Lab")
+st.title("⚡ 3-Phase Induction Motor Performance Evaluation using Equivalent Circuit Parameters")
 st.subheader("Torque-Speed Curve with Operating Point")
 
 # =========================
