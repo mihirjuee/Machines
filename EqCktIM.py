@@ -63,7 +63,7 @@ R2 = st.sidebar.slider("R2 (Ω)", 0.1, 5.0, 0.4)
 X2 = st.sidebar.slider("X2 (Ω)", 0.1, 5.0, 0.8)
 
 Xm = st.sidebar.slider("Xm (Ω)", 5.0, 100.0, 30.0)
-Rc = st.sidebar.slider("Rc (Ω)", 10.0, 500.0, 150.0)
+Rc = st.sidebar.slider("Rc (Ω)", 10.0, 2000.0, 150.0)
 
 slip = st.sidebar.slider("Operating Slip (s)", 0.01, 1.0, 0.05)
 P = st.sidebar.slider("No. of poles (P)", 2, 8, 4, step=2)
