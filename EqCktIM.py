@@ -12,35 +12,82 @@ st.set_page_config(page_title="IM Equivalent Circuit Lab", page_icon="logo.png",
 # =========================
 # 🎨 STYLE
 # =========================
-# 1. Custom Styling for Readability
 st.markdown("""
 <style>
-    /* Dark gradient background */
-    .stApp {
-        background: linear-gradient(135deg, #1f4037, #2c7744);
-    }
-    
-    /* Ensure all text is high-contrast white */
-    .main * {
-        color: #ffffff !important;
-    }
-    
-    /* Clean, professional Sidebar */
-    section[data-testid="stSidebar"] {
-        background-color: #f7f9fb !important;
-    }
-    section[data-testid="stSidebar"] * {
-        color: #333333 !important; /* Sidebar text is black for readability */
-        font-weight: 500;
-    }
-    
-    /* Glassmorphism for Metric containers */
-    div[data-testid="stMetric"] {
-        background-color: rgba(255,255,255,0.15);
-        padding: 20px;
-        border-radius: 15px;
-        border: 1px solid rgba(255,255,255,0.2);
-    }
+
+/* =========================
+   🌌 MAIN BACKGROUND
+========================= */
+.stApp {
+    background: linear-gradient(120deg, #0f2027, #203a43, #2c7744);
+}
+
+/* =========================
+   📄 MAIN TEXT AREA
+========================= */
+.main {
+    color: #ffffff !important;
+}
+
+/* Improve readability globally */
+.main * {
+    color: #ffffff !important;
+}
+
+/* =========================
+   📊 METRIC CARDS (GLASS EFFECT)
+========================= */
+div[data-testid="stMetric"] {
+    background: rgba(255, 255, 255, 0.12);
+    padding: 18px;
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+/* Metric value styling */
+div[data-testid="stMetric"] label {
+    color: #a8f0e5 !important;
+}
+
+/* =========================
+   📚 SIDEBAR (LIGHT PANEL)
+========================= */
+section[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #f7f9fb, #e6edf3) !important;
+}
+
+/* Sidebar text */
+section[data-testid="stSidebar"] * {
+    color: #1a1a1a !important;
+    font-weight: 500;
+}
+
+/* =========================
+   🧠 HEADINGS
+========================= */
+h1, h2, h3 {
+    color: #00ffd5 !important;
+    text-shadow: 0px 0px 10px rgba(0,255,213,0.3);
+}
+
+/* =========================
+   📈 BUTTONS (if used)
+========================= */
+.stButton > button {
+    background: linear-gradient(90deg, #00c9ff, #92fe9d);
+    color: black !important;
+    font-weight: bold;
+    border-radius: 10px;
+    border: none;
+}
+
+.stButton > button:hover {
+    transform: scale(1.03);
+    transition: 0.2s ease-in-out;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
