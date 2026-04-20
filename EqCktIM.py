@@ -66,15 +66,7 @@ Xm = st.sidebar.slider("Xm (Ω)", 5.0, 100.0, 30.0)
 Rc = st.sidebar.slider("Rc (Ω)", 10.0, 500.0, 150.0)
 
 slip = st.sidebar.slider("Operating Slip (s)", 0.01, 1.0, 0.05)
-s_max = R2 / X2
-if slip > s_max:
-    st.error(f"⚠️ Warning: Slip ({slip:.2f}) is beyond breakdown slip ({s_max:.2f})")
 
-elif abs(slip - s_max) < 0.05:
-    st.warning("⚡ Operating near maximum (breakdown) torque region")
-
-else:
-    st.success("✅ Stable operating region")
 
 # =========================
 # CALCULATIONS
@@ -178,6 +170,15 @@ ax.scatter(speed[0], torque_vals[0], color="green", label="Starting Torque")
 idx = np.argmax(torque_vals)
 ax.scatter(speed[idx], torque_vals[idx], color="orange", label="Max Torque")
 
+if T_op > torque_vals[idx]:
+    st.error(f"⚠️ Warning: Slip ({slip:.2f}) is beyond breakdown slip ({s_max:.2f})")
+
+elif abs(T_op - torque_vals[idx]) < 0.05:
+    st.warning("⚡ Operating near maximum (breakdown) torque region")
+
+else:
+    st.success("✅ Stable operating region")
+    
 ax.set_xlabel("Speed (RPM)")
 ax.set_ylabel("Torque (Nm)")
 ax.set_title("Torque-Speed Curve with Operating Point")
