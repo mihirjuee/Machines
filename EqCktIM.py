@@ -192,7 +192,7 @@ st.pyplot(fig)
 # =========================
 import io
 
-st.subheader("🔌 IEEE Style Equivalent Circuit")
+st.subheader("🔌 Equivalent Circuit")
 
 d = schemdraw.Drawing()
 
@@ -206,23 +206,20 @@ d.push()
 # Rc branch
 d += elm.Line().down()
 d += elm.Resistor().label("Rc")
-d += elm.Ground()
 
 d.pop()
 d.push()
-
 # Xm branch
 d += elm.Line().down()
 d += elm.Inductor().label("Xm")
-d += elm.Ground()
 
 d.pop()
 
 # Rotor branch
 d += elm.Line().right()
-d += elm.Resistor().label("R2/s")
 d += elm.Inductor().label("X2")
-d += elm.Ground()
+d += elm.Resistor().label("R2/s")
+
 
 # =========================
 # SAFE RENDER (NO STREAMLIT CRASH)
