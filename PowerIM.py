@@ -176,7 +176,7 @@ fig_sankey = go.Figure(go.Sankey(
     node=dict(
         pad=35,
         thickness=40,
-        line=dict(color="white", width=2),
+        line=dict(color="white", width=3),
 
         label=[
             "Input\nPower",
