@@ -275,7 +275,7 @@ for val in x_vals:
 
 fig2, ax = plt.subplots()
 ax.plot(x_vals, y_vals)
-ax.set_title(f"{mode} vs Output Power")
+ax.set_title(f"Output Power vs {mode}")
 ax.grid()
 st.pyplot(fig2)
 
