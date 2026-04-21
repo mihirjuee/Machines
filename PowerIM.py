@@ -140,14 +140,14 @@ d.push()
 
 d += elm.Line().down()
 d += elm.Resistor().label("Rc").color("red")
-d += elm.Ground()
+
 
 d.pop()
 d.push()
 d += elm.Line().right()
 d += elm.Line().down()
 d += elm.Inductor().label("Xm")
-d += elm.Ground()
+
 
 d.pop()
 
@@ -158,7 +158,8 @@ d += elm.Resistor().label("R2/s")
 d += elm.Inductor().label("X2")
 
 d += elm.Arrow().right().color("green").label("Pout")
-d += elm.Ground()
+d += elm.Line().down()
+d += elm.Line().ledt(6)
 
 d.draw()                 # draw first
 fig = plt.gcf()          # get current figure
