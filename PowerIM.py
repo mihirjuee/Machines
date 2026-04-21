@@ -16,18 +16,56 @@ st.set_page_config(page_title="IM Lab Pro", layout="wide")
 # =========================
 st.markdown("""
 <style>
+
+/* 🌌 Background */
 .stApp {
     background: linear-gradient(135deg, #1f4037, #2c7744);
 }
-.main * {
-    color: white !important;
+
+/* ✅ Main text (controlled, not forced everywhere) */
+h1, h2, h3, h4, h5, h6, p, label, div {
+    color: #f5f5f5;
 }
+
+/* ✅ Keep inputs readable */
+input, textarea {
+    color: black !important;
+    background-color: white !important;
+}
+
+/* ✅ Buttons */
+button[kind="primary"] {
+    background-color: #00c9a7 !important;
+    color: black !important;
+}
+
+/* ✅ Metrics (glass effect) */
+div[data-testid="stMetric"] {
+    background: rgba(255,255,255,0.15);
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+/* ✅ Sidebar clean */
 section[data-testid="stSidebar"] {
     background-color: #f7f9fb !important;
 }
 section[data-testid="stSidebar"] * {
-    color: black !important;
+    color: #222 !important;
 }
+
+/* ✅ Plot text fix */
+svg text {
+    fill: white !important;
+}
+
+/* ✅ Dataframe readability */
+[data-testid="stDataFrame"] {
+    background-color: white;
+    color: black;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
