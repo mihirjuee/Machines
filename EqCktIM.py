@@ -126,7 +126,7 @@ c1, c2, c3 = st.columns(3)
 
 c1.metric("Operating Speed", f"{operating_speed:.1f} RPM")
 c2.metric("Operating Torque", f"{T_op:.2f} Nm")
-c3.metric("Rotor Current (A)", f"{abs(I_op):.2f}")
+c3.metric("Stator Current (A)", f"{abs(I_op):.2f}")
 
 # =========================
 # POWER FLOW
