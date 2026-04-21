@@ -17,7 +17,7 @@ st.set_page_config(page_title="IM Lab Pro", layout="wide")
 st.markdown("""
 <style>
 .stApp {
-    background: linear-gradient(120deg, #1f4037, #2c7744);
+    background: linear-gradient(135deg, #1f4037, #2c7744);
 }
 .main * {
     color: white !important;
