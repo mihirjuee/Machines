@@ -173,17 +173,69 @@ st.pyplot(fig)           # always works
 st.subheader("🔷 Power Flow Diagram")
 
 fig_sankey = go.Figure(go.Sankey(
-    node=dict(label=[
-        "Input Power", "Stator Loss", "Core Loss",
-        "Air-gap Power", "Rotor Loss", "Mechanical Power", "Output Power"
-    ]),
+
+    arrangement="snap",
+
+    node=dict(
+        pad=25,
+        thickness=30,
+        line=dict(color="black", width=1),
+
+        # ✅ High contrast labels
+        label=[
+            "Input Power",
+            "Stator Loss",
+            "Core Loss",
+            "Air-gap Power",
+            "Rotor Loss",
+            "Mechanical Power",
+            "Output Power"
+        ],
+
+        # ✅ Bright node colors
+        color=[
+            "#00c9ff",  # Input
+            "#ff4d4d",  # Stator loss
+            "#ff7f50",  # Core loss
+            "#ffd700",  # Air-gap
+            "#ff6347",  # Rotor loss
+            "#32cd32",  # Mechanical
+            "#00ff7f"   # Output
+        ]
+    ),
+
     link=dict(
         source=[0,0,0,3,3,5],
         target=[1,2,3,4,5,6],
-        value=[P_stator, P_core, P_ag, P_rotor, P_mech, P_out]
+        value=[
+            P_stator,
+            P_core,
+            P_ag,
+            P_rotor,
+            P_mech,
+            P_out
+        ],
+
+        # ✅ Bright link colors
+        color=[
+            "rgba(255,0,0,0.6)",
+            "rgba(255,100,0,0.6)",
+            "rgba(255,215,0,0.6)",
+            "rgba(255,0,0,0.6)",
+            "rgba(50,205,50,0.6)",
+            "rgba(0,255,127,0.6)"
+        ]
     )
 ))
-st.plotly_chart(fig_sankey)
+
+# ✅ IMPORTANT: make text readable on dark background
+fig_sankey.update_layout(
+    font=dict(size=16, color="white"),
+    plot_bgcolor="rgba(0,0,0,0)",   # transparent
+    paper_bgcolor="rgba(0,0,0,0)"
+)
+
+st.plotly_chart(fig_sankey, use_container_width=True)
 
 # =========================
 # 🎛️ PARAMETER VARIATION
