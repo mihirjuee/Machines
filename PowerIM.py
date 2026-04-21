@@ -174,36 +174,36 @@ fig_sankey = go.Figure(go.Sankey(
     arrangement="snap",
 
     node=dict(
-        pad=25,
-        thickness=30,
-        line=dict(color="black", width=1),
+        pad=35,
+        thickness=40,
+        line=dict(color="black", width=2),
 
-        # ✅ High contrast labels
         label=[
-            "Input Power",
-            "Stator Loss",
-            "Core Loss",
-            "Air-gap Power",
-            "Rotor Loss",
-            "Mechanical Power",
-            "Output Power"
+            "Input\nPower",
+            "Stator\nLoss",
+            "Core\nLoss",
+            "Air-gap\nPower",
+            "Rotor\nLoss",
+            "Mechanical\nPower",
+            "Output\nPower"
         ],
 
-        # ✅ Bright node colors
+        # ✅ Strong solid colors
         color=[
-            "#00c9ff",  # Input
-            "#ff4d4d",  # Stator loss
-            "#ff7f50",  # Core loss
-            "#ffd700",  # Air-gap
-            "#ff6347",  # Rotor loss
-            "#32cd32",  # Mechanical
-            "#00ff7f"   # Output
+            "#007BFF",   # Input (Blue)
+            "#DC3545",   # Stator loss (Red)
+            "#FF7F50",   # Core loss (Orange)
+            "#FFC107",   # Air-gap (Yellow)
+            "#C82333",   # Rotor loss (Dark red)
+            "#28A745",   # Mechanical (Green)
+            "#20C997"    # Output (Bright green)
         ]
     ),
 
     link=dict(
         source=[0,0,0,3,3,5],
         target=[1,2,3,4,5,6],
+
         value=[
             P_stator,
             P_core,
@@ -213,27 +213,30 @@ fig_sankey = go.Figure(go.Sankey(
             P_out
         ],
 
-        # ✅ Bright link colors
+        # ✅ Thick & visible links
         color=[
-            "rgba(255,0,0,0.6)",
-            "rgba(255,100,0,0.6)",
-            "rgba(255,215,0,0.6)",
-            "rgba(255,0,0,0.6)",
-            "rgba(50,205,50,0.6)",
-            "rgba(0,255,127,0.6)"
-        ]
+            "rgba(220,53,69,0.8)",
+            "rgba(255,127,80,0.8)",
+            "rgba(255,193,7,0.9)",
+            "rgba(200,35,51,0.8)",
+            "rgba(40,167,69,0.9)",
+            "rgba(32,201,151,0.9)"
+        ],
+
+        # ✅ Show values on hover clearly
+        hovertemplate='Power Flow: %{value:.2f} W<extra></extra>'
     )
 ))
 
-# ✅ IMPORTANT: make text readable on dark background
+# ✅ Layout for maximum clarity
 fig_sankey.update_layout(
-    font=dict(size=16, color="white"),
-    plot_bgcolor="rgba(0,0,0,0)",   # transparent
-    paper_bgcolor="rgba(0,0,0,0)"
+    font=dict(size=18, color="black"),
+    paper_bgcolor="white",
+    plot_bgcolor="white",
+    height=500
 )
 
 st.plotly_chart(fig_sankey, use_container_width=True)
-
 # =========================
 # 🎛️ PARAMETER VARIATION
 # =========================
