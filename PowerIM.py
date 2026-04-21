@@ -144,7 +144,7 @@ d += elm.Ground()
 
 d.pop()
 d.push()
-
+d += elm.Line().right()
 d += elm.Line().down()
 d += elm.Inductor().label("Xm")
 d += elm.Ground()
