@@ -5,6 +5,8 @@ import plotly.graph_objects as go
 import schemdraw
 import schemdraw.elements as elm
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
 
 # =========================
 # PAGE CONFIG
