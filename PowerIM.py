@@ -215,7 +215,7 @@ fig_sankey = go.Figure(go.Sankey(
 
         # ✅ Thick & visible links
         color=[
-            "rgba(0, 120, 0, 0.9)",
+            "rgba(220,53,69,0.8)",
             "rgba(255,127,80,0.8)",
             "rgba(255,193,7,0.9)",
             "rgba(200,35,51,0.8)",
