@@ -138,7 +138,7 @@ P_core = 3 * (abs(V_parallel)**2) / Rc
 P_mech = P_ag_op * (1 - slip)
 
 st.info(f"""
-Input Power = {P_input:.2f} W  
+Input Power = {P_input:.2f} W 
 Core Loss = {P_core:.2f} W  
 Air-gap Power = {P_ag_op:.2f} W  
 Mechanical Power = {P_mech:.2f} W  
