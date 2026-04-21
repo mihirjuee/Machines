@@ -365,18 +365,41 @@ def compute(s, R2_val, V_line):
 # =========================
 # 📋 TABLE (SEGREGATED)
 # =========================
+# --- Thevenin equivalent ---
+Z_th = (Zm * Z1) / (Zm + Z1)
+R_th = Z_th.real
+X_th = Z_th.imag
+
+def calculate_smax(R2_val):
+    return R2_val / np.sqrt(R_th**2 + (X_th + X2)**2)
+    
 results = []
 
 for name, s, R2_val, V, color in cases:
+
     P_out, P_ag, eff = compute(s, R2_val, V)
+
+    # --- Calculate breakdown slip ---
+    s_max = calculate_smax(R2_val)
+
+    # --- Stability check ---
+    if s > s_max:
+        status = "❌ Unstable"
+    elif abs(s - s_max) < 0.02:
+        status = "⚠️ Near Breakdown"
+    else:
+        status = "✅ Stable"
+
     results.append({
         "Case": name,
         "Slip": s,
+        "s_max": round(s_max, 3),
         "R2": R2_val,
         "Voltage": V,
         "Output Power": round(P_out, 2),
         "Air-gap Power": round(P_ag, 2),
-        "Efficiency": round(eff*100, 2)
+        "Efficiency (%)": round(eff*100, 2),
+        "Operation": status   # ✅ NEW COLUMN
     })
 
 df = pd.DataFrame(results)
