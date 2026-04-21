@@ -282,31 +282,107 @@ st.pyplot(fig2)
 # =========================
 # 📊 MULTI CASE DASHBOARD
 # =========================
+# =========================
+# 📊 MULTI PARAMETER DASHBOARD (SEGREGATED)
+# =========================
 st.subheader("📊 Multi-Parameter Comparison")
 
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+
+# --- INPUT COLUMNS ---
+col1, col2, col3 = st.columns(3)
+
 cases = []
-for i in range(3):
-    s = st.slider(f"Slip {i+1}", 0.01, 1.0, 0.1*(i+1), key=f"s{i}")
-    R = st.slider(f"R2 {i+1}", 0.1, 5.0, 1.0+i, key=f"r{i}")
-    V = st.slider(f"Voltage {i+1}", 100, 500, 400, key=f"v{i}")
-    cases.append((s,R,V))
 
-results = []
-for idx,(s,R,V) in enumerate(cases):
+with col1:
+    st.markdown("### 🔵 Case 1")
+    s1 = st.slider("Slip 1", 0.01, 1.0, 0.05, key="s1")
+    R2_1 = st.slider("R2 1", 0.1, 5.0, 1.0, key="r21")
+    V1 = st.slider("Voltage 1", 100, 500, 400, key="v1")
+    cases.append(("Case 1", s1, R2_1, V1, "blue"))
 
-    Vp = V/np.sqrt(3)
-    Z2 = complex(R/s, X2)
+with col2:
+    st.markdown("### 🟠 Case 2")
+    s2 = st.slider("Slip 2", 0.01, 1.0, 0.2, key="s2")
+    R2_2 = st.slider("R2 2", 0.1, 5.0, 2.0, key="r22")
+    V2 = st.slider("Voltage 2", 100, 500, 400, key="v2")
+    cases.append(("Case 2", s2, R2_2, V2, "orange"))
+
+with col3:
+    st.markdown("### 🟢 Case 3")
+    s3 = st.slider("Slip 3", 0.01, 1.0, 0.5, key="s3")
+    R2_3 = st.slider("R2 3", 0.1, 5.0, 3.0, key="r23")
+    V3 = st.slider("Voltage 3", 100, 500, 400, key="v3")
+    cases.append(("Case 3", s3, R2_3, V3, "green"))
+
+# =========================
+# ⚙️ CALCULATION FUNCTION
+# =========================
+def compute(s, R2_val, V_line):
+    Vp = V_line / np.sqrt(3)
+    Z2 = complex(R2_val/s, X2)
+    Zm = 1 / (1/Rc + 1/complex(0, Xm))
     Zp = (Z2 * Zm) / (Z2 + Zm)
     Zt = Z1 + Zp
 
     I = Vp / Zt
-    V_air = abs(Vp - I*Z1)
+    pf = np.cos(np.angle(I))
+    P_in = 3 * Vp * abs(I) * pf
+
+    V_air = abs(Vp - I * Z1)
     I2 = V_air / Z2
 
-    P_ag = 3*(abs(I2)**2)*(R/s)
-    P_out = P_ag*(1-s)
+    P_ag = 3 * (abs(I2)**2) * (R2_val/s)
+    P_out = P_ag * (1 - s)
+    eff = P_out / P_in if P_in > 0 else 0
 
-    results.append((f"Case {idx+1}", P_out))
+    return P_out, P_ag, eff
 
-df = pd.DataFrame(results, columns=["Case","Output Power"])
-st.dataframe(df)
+# =========================
+# 📋 TABLE (SEGREGATED)
+# =========================
+results = []
+
+for name, s, R2_val, V, color in cases:
+    P_out, P_ag, eff = compute(s, R2_val, V)
+    results.append({
+        "Case": name,
+        "Slip": s,
+        "R2": R2_val,
+        "Voltage": V,
+        "Output Power": round(P_out, 2),
+        "Air-gap Power": round(P_ag, 2),
+        "Efficiency": round(eff*100, 2)
+    })
+
+df = pd.DataFrame(results)
+
+st.markdown("### 📋 Comparison Table")
+st.dataframe(df, use_container_width=True)
+
+# =========================
+# 📊 BAR CHART (CLEAR COLORS)
+# =========================
+st.markdown("### 📊 Performance Comparison")
+
+fig, ax = plt.subplots()
+
+labels = df["Case"]
+
+x = np.arange(len(labels))
+
+width = 0.25
+
+ax.bar(x - width, df["Output Power"], width, label="Output Power")
+ax.bar(x, df["Air-gap Power"], width, label="Air-gap Power")
+ax.bar(x + width, df["Efficiency"], width, label="Efficiency")
+
+ax.set_xticks(x)
+ax.set_xticklabels(labels)
+ax.set_title("Comparison of Cases")
+ax.legend()
+ax.grid()
+
+st.pyplot(fig)
