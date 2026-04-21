@@ -11,7 +11,7 @@ matplotlib.use('Agg')
 # =========================
 # PAGE CONFIG
 # =========================
-st.set_page_config(page_title="IM Lab Pro", layout="wide")
+st.set_page_config(page_title="IM Lab Pro", page_icon="logo.png", layout="wide")
 
 # =========================
 # 🎨 UI STYLE
