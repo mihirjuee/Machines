@@ -244,7 +244,19 @@ st.subheader("📈 Parameter Variation")
 
 mode = st.selectbox("Select Parameter", ["Slip", "Rotor Resistance", "Voltage"])
 
-x_vals = np.linspace(0.01, 1, 50)
+# ✅ Define correct range based on parameter
+if mode == "Slip":
+    x_vals = np.linspace(0.01, 1, 50)
+    x_label = "Slip"
+
+elif mode == "Rotor Resistance":
+    x_vals = np.linspace(0.1, 5, 50)
+    x_label = "R2 (Ω)"
+
+elif mode == "Voltage":
+    x_vals = np.linspace(100, 500, 50)
+    x_label = "Voltage (V)"
+
 y_vals = []
 
 for val in x_vals:
@@ -253,13 +265,17 @@ for val in x_vals:
     R2_var = R2
     V_var = V_phase
 
+    # ✅ Apply variation correctly
     if mode == "Slip":
         s = val
-    elif mode == "Rotor Resistance":
-        R2_var = val * 5
-    elif mode == "Voltage":
-        V_var = val * 400 / np.sqrt(3)
 
+    elif mode == "Rotor Resistance":
+        R2_var = val
+
+    elif mode == "Voltage":
+        V_var = val / np.sqrt(3)
+
+    # --- Circuit calculation ---
     Z2_var = complex(R2_var/s, X2)
     Zp_var = (Z2_var * Zm) / (Z2_var + Zm)
     Zt_var = Z1 + Zp_var
@@ -273,10 +289,19 @@ for val in x_vals:
 
     y_vals.append(P_out_var)
 
+# =========================
+# 📊 PLOT
+# =========================
 fig2, ax = plt.subplots()
-ax.plot(x_vals, y_vals)
+
+ax.plot(x_vals, y_vals, linewidth=2)
+
+ax.set_xlabel(x_label)
+ax.set_ylabel("Output Power (W)")
 ax.set_title(f"Output Power vs {mode}")
+
 ax.grid()
+
 st.pyplot(fig2)
 
 # =========================
