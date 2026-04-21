@@ -158,8 +158,8 @@ d += elm.Resistor().label("R2/s")
 d += elm.Inductor().label("X2")
 
 d += elm.Arrow().right().color("green").label("Pout")
-d += elm.Line().down(6)
-d += elm.Line().left(16)
+d += elm.Line().down(5)
+d += elm.Line().left(18)
 
 d.draw()                 # draw first
 fig = plt.gcf()          # get current figure
