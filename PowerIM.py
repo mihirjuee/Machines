@@ -412,22 +412,55 @@ st.dataframe(df, use_container_width=True)
 # =========================
 st.markdown("### 📊 Performance Comparison")
 
-fig, ax = plt.subplots()
+fig, ax1 = plt.subplots()
 
 labels = df["Case"]
-
 x = np.arange(len(labels))
+width = 0.3
 
-width = 0.25
+# -----------------------------
+# 🎨 Color based on stability
+# -----------------------------
+colors = []
+for status in df["Operation"]:
+    if "Unstable" in status:
+        colors.append("red")
+    elif "Near" in status:
+        colors.append("orange")
+    else:
+        colors.append("green")
 
-ax.bar(x - width, df["Output Power"], width, label="Output Power")
-ax.bar(x, df["Air-gap Power"], width, label="Air-gap Power")
-ax.bar(x + width, df["Efficiency"], width, label="Efficiency")
+# -----------------------------
+# 📊 POWER (Left Axis)
+# -----------------------------
+ax1.bar(x - width/2, df["Output Power"], width, label="Output Power", alpha=0.8)
+ax1.bar(x + width/2, df["Air-gap Power"], width, label="Air-gap Power", alpha=0.6)
 
-ax.set_xticks(x)
-ax.set_xticklabels(labels)
-ax.set_title("Comparison of Cases")
-ax.legend()
-ax.grid()
+ax1.set_ylabel("Power (W)")
+ax1.set_xticks(x)
+ax1.set_xticklabels(labels)
+ax1.grid()
+
+# -----------------------------
+# 📈 EFFICIENCY (Right Axis)
+# -----------------------------
+ax2 = ax1.twinx()
+ax2.plot(x, df["Efficiency (%)"], marker='o', linestyle='--', label="Efficiency", color="black")
+
+ax2.set_ylabel("Efficiency (%)")
+
+# -----------------------------
+# 🚨 Highlight unstable cases
+# -----------------------------
+for i, txt in enumerate(df["Operation"]):
+    ax1.text(x[i], df["Output Power"][i] + 5, txt, ha='center', fontsize=9, color=colors[i])
+
+# -----------------------------
+# 🏷️ TITLE & LEGEND
+# -----------------------------
+fig.suptitle("Comparison of Cases (with Stability Insight)")
+
+ax1.legend(loc="upper left")
+ax2.legend(loc="upper right")
 
 st.pyplot(fig)
