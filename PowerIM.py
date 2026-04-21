@@ -305,9 +305,6 @@ ax.grid()
 st.pyplot(fig2)
 
 # =========================
-# 📊 MULTI CASE DASHBOARD
-# =========================
-# =========================
 # 📊 MULTI PARAMETER DASHBOARD (SEGREGATED)
 # =========================
 st.subheader("📊 Multi-Parameter Comparison")
