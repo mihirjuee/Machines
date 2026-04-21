@@ -163,8 +163,9 @@ d += elm.Inductor().label("X2")
 d += elm.Arrow().right().color("green").label("Pout")
 d += elm.Ground()
 
-fig = d.draw()
-st.pyplot(fig)
+d.draw()                 # draw first
+fig = plt.gcf()          # get current figure
+st.pyplot(fig)           # always works
 
 # =========================
 # 🔷 SANKEY DIAGRAM
