@@ -1,15 +1,15 @@
-# Proper Transformer Leakage Flux Animation with Realistic Closed Magnetic Core
-# Streamlit App
+# Transformer Leakage Flux Animation
+# Proper shell/core-type style magnetic core + realistic coil windings
 
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle, FancyArrowPatch
+from matplotlib.patches import Rectangle, FancyArrowPatch, Arc
 import time
 
-st.set_page_config(page_title="Transformer Leakage Flux Animation", layout="centered")
+st.set_page_config(page_title="Proper Transformer Core & Winding", layout="centered")
 
-st.title("⚡ Transformer Leakage Flux Animation (Proper Core Design)")
+st.title("⚡ Transformer Leakage Flux Animation (Proper Core + Windings)")
 
 # ================= USER INPUTS =================
 freq = st.slider("Supply Frequency (Hz)", 1, 60, 50)
@@ -20,82 +20,99 @@ run_anim = st.button("▶ Start Animation")
 
 plot_area = st.empty()
 
+# ================= WINDING DRAW FUNCTION =================
+def draw_winding(ax, x_center, y_bottom, turns=6, radius=0.22, spacing=0.38, color="blue"):
+    """
+    Draws vertical transformer winding loops around a limb.
+    """
+    for i in range(turns):
+        y = y_bottom + i * spacing
+        arc_left = Arc((x_center - radius, y), width=radius * 2, height=spacing * 0.9,
+                       theta1=-90, theta2=90, linewidth=2.5, color=color)
+        arc_right = Arc((x_center + radius, y), width=radius * 2, height=spacing * 0.9,
+                        theta1=90, theta2=270, linewidth=2.5, color=color)
+
+        ax.add_patch(arc_left)
+        ax.add_patch(arc_right)
+
 # ================= ANIMATION =================
 if run_anim:
 
-    for frame in range(150):
+    for frame in range(140):
 
         t = frame / 25
         current = np.sin(2 * np.pi * freq * t / 50)
 
-        # Flux calculations
+        # Flux values
         mutual_flux = current
         primary_leakage = leakage_factor * current
         secondary_leakage = leakage_factor * turns_ratio * current
 
-        fig, ax = plt.subplots(figsize=(9, 7))
+        fig, ax = plt.subplots(figsize=(10, 7))
 
         # =====================================================
-        # CLOSED RECTANGULAR TRANSFORMER CORE (Proper Magnetic Path)
+        # PROPER CORE (2-LIMB CORE TYPE)
         # =====================================================
-        # Outer core
-        outer_core = Rectangle((2, 1), 4, 4, fill=False, linewidth=6, edgecolor='black')
+        # Left limb
+        ax.add_patch(Rectangle((2, 1), 0.7, 4, color="black"))
 
-        # Inner window
-        inner_core = Rectangle((3, 2), 2, 2, fill=False, linewidth=6, edgecolor='white')
+        # Right limb
+        ax.add_patch(Rectangle((5.3, 1), 0.7, 4, color="black"))
 
-        ax.add_patch(outer_core)
-        ax.add_patch(inner_core)
+        # Top yoke
+        ax.add_patch(Rectangle((2, 4.3), 4, 0.7, color="black"))
+
+        # Bottom yoke
+        ax.add_patch(Rectangle((2, 1), 4, 0.7, color="black"))
+
+        # Window opening
+        ax.add_patch(Rectangle((2.7, 1.7), 2.6, 2.6, color="white"))
 
         # =====================================================
         # PRIMARY WINDING (LEFT LIMB)
         # =====================================================
-        for i in range(6):
-            y = 1.4 + i * 0.5
-            ax.plot([1.3, 2], [y, y], color='blue', linewidth=3)
+        draw_winding(ax, x_center=1.7, y_bottom=1.8, turns=7, color="blue")
 
         # =====================================================
         # SECONDARY WINDING (RIGHT LIMB)
         # =====================================================
-        for i in range(6):
-            y = 1.4 + i * 0.5
-            ax.plot([6, 6.7], [y, y], color='green', linewidth=3)
+        draw_winding(ax, x_center=6.3, y_bottom=1.8, turns=7, color="green")
 
         # =====================================================
-        # MAIN FLUX (Through Core)
+        # MAIN MUTUAL FLUX (inside core path)
         # =====================================================
         main_flux = FancyArrowPatch(
-            (4, 4.6), (4, 1.4),
-            connectionstyle="arc3,rad=0",
+            (3.3, 4.6), (4.7, 4.6),
+            connectionstyle="arc3,rad=0.35",
             arrowstyle='->',
-            mutation_scale=20 + abs(mutual_flux) * 20,
-            linewidth=4,
+            mutation_scale=20 + abs(mutual_flux) * 18,
+            linewidth=3.5,
             color='red'
         )
         ax.add_patch(main_flux)
 
         # =====================================================
-        # PRIMARY LEAKAGE FLUX (Outside Primary Only)
+        # PRIMARY LEAKAGE FLUX
         # =====================================================
         primary_flux = FancyArrowPatch(
-            (1.6, 4.2), (1.6, 1.8),
-            connectionstyle="arc3,rad=0.5",
+            (1.3, 4.4), (1.3, 1.6),
+            connectionstyle="arc3,rad=0.55",
             arrowstyle='->',
-            mutation_scale=15 + abs(primary_leakage) * 15,
-            linewidth=3,
+            mutation_scale=14 + abs(primary_leakage) * 14,
+            linewidth=2.5,
             color='orange'
         )
         ax.add_patch(primary_flux)
 
         # =====================================================
-        # SECONDARY LEAKAGE FLUX (Outside Secondary Only)
+        # SECONDARY LEAKAGE FLUX
         # =====================================================
         secondary_flux = FancyArrowPatch(
-            (6.4, 1.8), (6.4, 4.2),
-            connectionstyle="arc3,rad=0.5",
+            (6.7, 1.6), (6.7, 4.4),
+            connectionstyle="arc3,rad=0.55",
             arrowstyle='->',
-            mutation_scale=15 + abs(secondary_leakage) * 15,
-            linewidth=3,
+            mutation_scale=14 + abs(secondary_leakage) * 14,
+            linewidth=2.5,
             color='purple'
         )
         ax.add_patch(secondary_flux)
@@ -103,44 +120,40 @@ if run_anim:
         # =====================================================
         # LABELS
         # =====================================================
-        ax.text(0.9, 5.3, "Primary", fontsize=12, weight='bold', color='blue')
-        ax.text(6.1, 5.3, "Secondary", fontsize=12, weight='bold', color='green')
+        ax.text(1.0, 5.4, "Primary Winding", fontsize=12, weight="bold", color="blue")
+        ax.text(5.8, 5.4, "Secondary Winding", fontsize=12, weight="bold", color="green")
 
-        ax.text(4.2, 3, "Main Flux", color='red', fontsize=11)
-        ax.text(0.4, 3, "Primary Leakage", color='orange', fontsize=10)
-        ax.text(6.9, 3, "Secondary Leakage", color='purple', fontsize=10)
+        ax.text(3.6, 5.25, "Main Flux", fontsize=11, color="red")
+        ax.text(0.15, 3.1, "Primary Leakage", fontsize=10, color="orange", rotation=90)
+        ax.text(7.25, 3.1, "Secondary Leakage", fontsize=10, color="purple", rotation=90)
 
-        # =====================================================
-        # LIVE VALUES
-        # =====================================================
-        ax.text(0.3, 0.6, f"Instantaneous Current = {current:.2f}", fontsize=11)
-        ax.text(0.3, 0.3, f"Leakage Factor = {leakage_factor:.2f}", fontsize=11)
+        # Live current
+        ax.text(0.3, 0.55, f"Instantaneous Magnetizing Current = {current:.2f}", fontsize=11)
+        ax.text(0.3, 0.25, f"Leakage Factor = {leakage_factor:.2f}", fontsize=11)
 
         # =====================================================
-        # AXIS SETTINGS
+        # DISPLAY SETTINGS
         # =====================================================
         ax.set_xlim(0, 8)
         ax.set_ylim(0, 6)
         ax.axis("off")
 
         plot_area.pyplot(fig)
-
         plt.close(fig)
 
         time.sleep(0.05)
 
 # ================= THEORY =================
 st.write("---")
-st.subheader("📘 Transformer Core Insight")
+st.subheader("📘 Proper Transformer Structure")
 st.info("""
-🟥 Main Flux:
-Flows through the closed iron core and links both windings.
+🟦 Primary winding creates magnetizing current.
 
-🟧 Primary Leakage Flux:
-Only links primary winding, does not transfer useful energy.
+🟥 Main flux travels through the closed iron core path (limbs + yokes).
 
-🟪 Secondary Leakage Flux:
-Only links secondary winding.
+🟧 Primary leakage flux links only primary winding.
 
-⚡ Proper closed core ensures efficient magnetic coupling and reduces leakage.
+🟪 Secondary leakage flux links only secondary winding.
+
+⚡ Proper winding placement around core limbs improves coupling and reduces leakage reactance.
 """)
