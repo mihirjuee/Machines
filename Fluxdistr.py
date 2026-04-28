@@ -1,210 +1,210 @@
 # ============================================================
-# 3-PHASE INDUCTION MOTOR AIR-GAP RESULTANT FLUX DISTRIBUTION
-# WITH STRUCTURAL DIAGRAM
-# Streamlit App
+# 3-PHASE INDUCTION MOTOR COMPLETE AIR-GAP FLUX DENSITY MAP
+# Shows:
+# ✅ Full 360° air-gap flux density distribution
+# ✅ Spatial flux density around entire air-gap
+# ✅ Flux contour map
+# ✅ Instantaneous rotating field
 # ============================================================
 
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
-from matplotlib.lines import Line2D
 
 # ---------------- PAGE CONFIG ----------------
-st.set_page_config(page_title="3-Phase Air-Gap Flux Distribution", layout="wide")
+st.set_page_config(page_title="Complete Air-Gap Flux Density", layout="wide")
 
-st.title("⚡ 3-Phase Induction Motor Resultant Flux Distribution")
-st.markdown("### Air-gap flux waves + rotating magnetic field + motor structural diagram")
+st.title("⚡ Complete Air-Gap Flux Density Distribution in 3-Phase Induction Motor")
+st.markdown("### Visualizing flux density across the entire 360° air-gap")
 
 # ---------------- SIDEBAR ----------------
 st.sidebar.header("Motor Parameters")
 
 f = st.sidebar.slider("Supply Frequency (Hz)", 1, 100, 50)
 pole = st.sidebar.selectbox("Number of Poles", [2, 4, 6, 8], index=1)
-Bm = st.sidebar.slider("Maximum Flux Density (pu)", 0.5, 2.0, 1.0)
+Bm = st.sidebar.slider("Maximum Flux Density", 0.5, 2.0, 1.0)
 wt_deg = st.sidebar.slider("Electrical Angle ωt (degrees)", 0, 360, 0)
 
-# ---------------- CALCULATIONS ----------------
 wt = np.radians(wt_deg)
 
-theta_deg = np.linspace(0, 360, 1000)
+# ---------------- AIR-GAP GRID ----------------
+# Spatial angle around full circumference
+theta_deg = np.linspace(0, 360, 720)
 theta = np.radians(theta_deg)
 
-# Space flux waves
-phi_R = Bm * np.cos(theta - wt)
-phi_Y = Bm * np.cos(theta - wt + 2*np.pi/3)
-phi_B = Bm * np.cos(theta - wt - 2*np.pi/3)
+# Radial air-gap thickness
+r = np.linspace(0.75, 1.0, 80)
 
-phi_resultant = phi_R + phi_Y + phi_B
+Theta, R = np.meshgrid(theta, r)
 
+# ---------------- FLUX DENSITY EQUATIONS ----------------
+# 3-phase spatial fluxes
+B_R = Bm * np.cos(Theta - wt)
+B_Y = Bm * np.cos(Theta - wt + 2*np.pi/3)
+B_B = Bm * np.cos(Theta - wt - 2*np.pi/3)
+
+# Resultant flux density
+B_total = B_R + B_Y + B_B
+
+# =======================
+# METRICS
+# =======================
 Ns = 120 * f / pole
 
-# ============================================================
-# METRICS
-# ============================================================
 col1, col2, col3 = st.columns(3)
 
 col1.metric("Synchronous Speed", f"{Ns:.1f} RPM")
 col2.metric("Electrical Angle", f"{wt_deg}°")
-col3.metric("Resultant Flux Peak", f"{np.max(phi_resultant):.2f} pu")
+col3.metric("Peak Flux Density", f"{np.max(B_total):.2f} pu")
 
 # ============================================================
-# STRUCTURAL DIAGRAM
+# PLOT 1: COMPLETE AIR-GAP CROSS SECTION
 # ============================================================
-st.subheader("🛠 Structural Diagram of 3-Phase Induction Motor")
+st.subheader("🌀 Complete Air-Gap Flux Density (Entire Circumference)")
 
-fig0, ax0 = plt.subplots(figsize=(8,8))
+fig1, ax1 = plt.subplots(figsize=(10,10))
 
-# Stator outer circle
-stator_outer = Circle((0, 0), 1.0, fill=False, linewidth=4)
-# Stator inner circle
-stator_inner = Circle((0, 0), 0.75, fill=False, linewidth=3)
+# Convert polar to cartesian
+X = R * np.cos(Theta)
+Y = R * np.sin(Theta)
 
-# Rotor
-rotor = Circle((0, 0), 0.45, fill=False, linewidth=4)
+contour = ax1.contourf(X, Y, B_total, levels=100)
 
-ax0.add_patch(stator_outer)
-ax0.add_patch(stator_inner)
-ax0.add_patch(rotor)
+# Rotor and stator boundaries
+rotor = Circle((0,0), 0.75, fill=False, linewidth=3)
+stator = Circle((0,0), 1.0, fill=False, linewidth=3)
 
-# Phase winding positions
-phase_angles_deg = [90, 210, 330]
-phase_labels = ["R", "Y", "B"]
+ax1.add_patch(rotor)
+ax1.add_patch(stator)
 
-for angle_deg, label in zip(phase_angles_deg, phase_labels):
-    angle = np.radians(angle_deg)
-    
-    # Coil position
-    x1, y1 = 0.75*np.cos(angle), 0.75*np.sin(angle)
-    x2, y2 = 1.0*np.cos(angle), 1.0*np.sin(angle)
-    
-    ax0.plot([x1, x2], [y1, y2], linewidth=6)
-    
-    # Label
-    xt, yt = 1.15*np.cos(angle), 1.15*np.sin(angle)
-    ax0.text(xt, yt, f"Phase {label}", fontsize=14, fontweight='bold', ha='center')
+# Resultant field vector
+x_res = 0.65 * np.cos(wt)
+y_res = 0.65 * np.sin(wt)
 
-# Resultant rotating field vector
-x_res = 0.7 * np.cos(wt)
-y_res = 0.7 * np.sin(wt)
-
-ax0.arrow(
+ax1.arrow(
     0, 0, x_res, y_res,
-    head_width=0.06,
+    head_width=0.05,
     head_length=0.08,
     linewidth=4
 )
 
-# Rotation arrow
-circle_theta = np.linspace(0, 2*np.pi, 200)
-ax0.plot(0.6*np.cos(circle_theta), 0.6*np.sin(circle_theta), linestyle='--')
+# Phase labels
+phase_angles = [90, 210, 330]
+phase_names = ["R", "Y", "B"]
 
-ax0.text(0, 0, "ROTOR", ha='center', va='center', fontsize=14, fontweight='bold')
-ax0.text(0, 1.25, "STATOR", ha='center', fontsize=16, fontweight='bold')
+for ang, name in zip(phase_angles, phase_names):
+    a = np.radians(ang)
+    ax1.text(1.15*np.cos(a), 1.15*np.sin(a), f"Phase {name}",
+             ha='center', fontsize=12, fontweight='bold')
 
-ax0.set_xlim(-1.4, 1.4)
-ax0.set_ylim(-1.4, 1.4)
-ax0.set_aspect('equal')
-ax0.axis('off')
+ax1.text(0, 0, "ROTOR", ha='center', va='center', fontsize=14, fontweight='bold')
+ax1.text(0, 1.25, "STATOR", ha='center', fontsize=14, fontweight='bold')
 
-st.pyplot(fig0)
+ax1.set_aspect('equal')
+ax1.set_xlim(-1.3, 1.3)
+ax1.set_ylim(-1.3, 1.3)
+ax1.axis('off')
 
-# ============================================================
-# AIR-GAP FLUX DISTRIBUTION
-# ============================================================
-st.subheader("🌊 Air-Gap Flux Distribution")
-
-fig1, ax1 = plt.subplots(figsize=(12,6))
-
-ax1.plot(theta_deg, phi_R, label="Phase R Flux (ΦR)", linewidth=2)
-ax1.plot(theta_deg, phi_Y, label="Phase Y Flux (ΦY)", linewidth=2)
-ax1.plot(theta_deg, phi_B, label="Phase B Flux (ΦB)", linewidth=2)
-ax1.plot(theta_deg, phi_resultant, label="Resultant Flux (Φres)", linewidth=4)
-
-ax1.set_title("Flux Distribution in Air Gap")
-ax1.set_xlabel("Space Angle (degrees)")
-ax1.set_ylabel("Flux Density (pu)")
-ax1.set_xticks([0, 60, 120, 180, 240, 300, 360])
-ax1.grid(True)
-ax1.legend()
+cbar = plt.colorbar(contour)
+cbar.set_label("Flux Density (pu)")
 
 st.pyplot(fig1)
 
 # ============================================================
-# POLAR ROTATION
+# PLOT 2: AIR-GAP FLUX DENSITY vs SPACE ANGLE
 # ============================================================
-st.subheader("🧭 Resultant Rotating Magnetic Field")
+st.subheader("📈 Flux Density Around Full Air-Gap Circumference")
 
-fig2 = plt.figure(figsize=(8,8))
-ax2 = fig2.add_subplot(111, projection='polar')
+fig2, ax2 = plt.subplots(figsize=(14,6))
 
-ax2.arrow(
-    wt, 0,
-    0, 1.5*Bm,
-    width=0.02,
-    head_width=0.1,
-    head_length=0.15
-)
+ax2.plot(theta_deg, B_R[0], label="Phase R Flux Density", linewidth=2)
+ax2.plot(theta_deg, B_Y[0], label="Phase Y Flux Density", linewidth=2)
+ax2.plot(theta_deg, B_B[0], label="Phase B Flux Density", linewidth=2)
+ax2.plot(theta_deg, B_total[0], label="Resultant Flux Density", linewidth=4)
 
-angles = np.linspace(0, 2*np.pi, 360)
-ax2.plot(angles, np.ones_like(angles)*Bm, linestyle='--')
+ax2.set_title("Flux Density Distribution Across Entire Air Gap")
+ax2.set_xlabel("Mechanical Space Angle (degrees)")
+ax2.set_ylabel("Flux Density (pu)")
+ax2.set_xticks([0, 60, 120, 180, 240, 300, 360])
+ax2.grid(True)
+ax2.legend()
 
-ax2.set_title("Rotating Flux Vector")
 st.pyplot(fig2)
 
 # ============================================================
-# TIME WAVEFORMS
+# PLOT 3: POLAR FLUX DENSITY
 # ============================================================
-st.subheader("📈 Three-Phase Time Waveforms")
+st.subheader("🧭 Polar Representation of Flux Density")
 
-t_deg = np.linspace(0, 360, 1000)
-t = np.radians(t_deg)
+fig3 = plt.figure(figsize=(8,8))
+ax3 = fig3.add_subplot(111, projection='polar')
 
-FR = Bm * np.sin(t)
-FY = Bm * np.sin(t - 2*np.pi/3)
-FB = Bm * np.sin(t - 4*np.pi/3)
+# Shift negative values outward for visibility
+flux_positive = B_total[0]
 
-fig3, ax3 = plt.subplots(figsize=(12,5))
-
-ax3.plot(t_deg, FR, label="Phase R")
-ax3.plot(t_deg, FY, label="Phase Y")
-ax3.plot(t_deg, FB, label="Phase B")
-
-ax3.axvline(wt_deg, linestyle='--', linewidth=2, label="Current ωt")
-
-ax3.set_title("3-Phase Fluxes in Time")
-ax3.set_xlabel("Electrical Angle (degrees)")
-ax3.set_ylabel("Flux")
-ax3.grid(True)
-ax3.legend()
+ax3.plot(theta, flux_positive, linewidth=3)
+ax3.set_title("360° Air-Gap Flux Density Pattern")
 
 st.pyplot(fig3)
+
+# ============================================================
+# TIME EVOLUTION ANIMATION-LIKE SNAPSHOTS
+# ============================================================
+st.subheader("⏱ Flux Rotation Principle")
+
+snapshot_angles = [0, 90, 180, 270]
+
+cols = st.columns(4)
+
+for idx, angle_deg in enumerate(snapshot_angles):
+    angle = np.radians(angle_deg)
+    B_snap = (
+        Bm*np.cos(theta-angle)
+        + Bm*np.cos(theta-angle+2*np.pi/3)
+        + Bm*np.cos(theta-angle-2*np.pi/3)
+    )
+
+    fig_snap = plt.figure(figsize=(3,3))
+    ax_snap = fig_snap.add_subplot(111, projection='polar')
+    ax_snap.plot(theta, B_snap, linewidth=2)
+    ax_snap.set_title(f"{angle_deg}°")
+
+    cols[idx].pyplot(fig_snap)
 
 # ============================================================
 # THEORY
 # ============================================================
 st.markdown("---")
-st.subheader("📘 Theory")
+st.subheader("📘 Key Concept")
 
 st.markdown(f"""
-### Rotating Magnetic Field Principle:
-Balanced 3-phase currents produce 3 sinusoidal fluxes displaced by 120° in space and time.
+### Air-Gap Flux Density Equation:
+**B(θ,t) = BR + BY + BB**
 
-### Equations:
-ΦR = Φm cos(θ − ωt)  
-ΦY = Φm cos(θ − ωt + 120°)  
-ΦB = Φm cos(θ − ωt − 120°)
+Where:
+
+**BR = Bm cos(θ − ωt)**  
+**BY = Bm cos(θ − ωt + 120°)**  
+**BB = Bm cos(θ − ωt − 120°)**  
 
 ### Result:
-### Constant magnitude rotating flux:
-Φres = 1.5 Φm
+### Btotal = 1.5 Bm cos(θ − ωt)
+
+---
+
+## Meaning:
+- Flux exists across the full 360° air-gap
+- Magnitude remains constant
+- Pattern rotates at synchronous speed
+- Creates electromagnetic torque
 
 ### Synchronous Speed:
-Ns = 120f/P = {Ns:.1f} RPM
+**Ns = 120f/P = {Ns:.1f} RPM**
 """)
 
 # ============================================================
 # FOOTER
 # ============================================================
 st.markdown("---")
-st.success("⚡ This rotating air-gap flux is what produces torque in a three-phase induction motor.")
+st.success("⚡ The entire air-gap flux wave rotates as a constant-amplitude sinusoidal field — this is the heart of induction motor operation.")
