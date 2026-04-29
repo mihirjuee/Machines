@@ -1,24 +1,23 @@
 # -*- coding: utf-8 -*-
 """
-Induction Motor Air-Gap Flux Visualization
-FINAL UPGRADE:
-✅ Stator flux (red)
-✅ Rotor flux (green)
-✅ Resultant flux (blue)
+RMF Vector Field Animation (3-Phase Induction Motor)
+NEW:
+✅ Rotating magnetic field arrows (vector field)
+✅ True RMF visualization
 """
 
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.patches import Circle
+from matplotlib.patches import Circle, FancyArrowPatch
 import time
 
 # ============================================================
-# PAGE CONFIG
+# CONFIG
 # ============================================================
-st.set_page_config(page_title="3-Flux Motor Model", layout="wide")
+st.set_page_config(page_title="RMF Vector Field", layout="wide")
 
-st.title("⚡ Stator, Rotor & Resultant Flux Distribution")
+st.title("⚡ Rotating Magnetic Field (Vector Animation)")
 
 # ============================================================
 # SIDEBAR
@@ -27,7 +26,7 @@ f = st.sidebar.slider("Frequency (Hz)", 1, 100, 50)
 pole = st.sidebar.selectbox("Poles", [2, 4, 6, 8], index=1)
 Bm = st.sidebar.slider("Bm (T)", 0.1, 3.0, 1.0)
 
-slip = st.sidebar.slider("Slip (s)", 0.0, 0.3, 0.05)
+slip = st.sidebar.slider("Slip (optional)", 0.0, 0.3, 0.05)
 speed = st.sidebar.slider("Animation Speed", 1, 20, 5)
 
 run = st.sidebar.checkbox("Run", True)
@@ -38,7 +37,9 @@ run = st.sidebar.checkbox("Run", True)
 p = pole // 2
 Ns = 120 * f / pole
 
-theta = np.linspace(0, 2*np.pi, 2500)
+# Vector positions in air-gap
+n_vectors = pole * 6
+angles = np.linspace(0, 2*np.pi, n_vectors, endpoint=False)
 
 metric = st.empty()
 plot = st.empty()
@@ -53,82 +54,65 @@ while run:
     wt_rad = np.radians(wt)
 
     # ========================================================
-    # STATOR FLUX (RMF)
-    # ========================================================
-    B_stator = 1.5 * Bm * np.cos(p * theta - wt_rad)
-
-    # ========================================================
-    # ROTOR FLUX (LAGGING DUE TO SLIP)
-    # ========================================================
-    rotor_wt = wt_rad * (1 - slip)
-    B_rotor = 1.2 * Bm * np.cos(p * theta - rotor_wt)
-
-    # ========================================================
-    # RESULTANT FLUX
-    # ========================================================
-    B_res = B_stator + B_rotor
-
-    # ========================================================
-    # AIR-GAP GEOMETRY (for visualization)
-    # ========================================================
-    r_mean = 0.86
-    scale = 0.10 * Bm
-
-    R = r_mean + scale * np.cos(p * theta - wt_rad)
-
-    X = R * np.cos(theta)
-    Y = R * np.sin(theta)
-
-    # ========================================================
     # FIGURE
     # ========================================================
     fig, ax = plt.subplots(figsize=(9, 9))
 
     # Machine geometry
-    ax.add_patch(Circle((0,0), 0.55, fill=False, linewidth=3))   # rotor
-    ax.add_patch(Circle((0,0), 1.18, fill=False, linewidth=3))   # stator
-    ax.add_patch(Circle((0,0), r_mean, fill=False, linestyle='--', linewidth=2))  # flux zero
+    ax.add_patch(Circle((0,0), 0.55, fill=False, linewidth=3))
+    ax.add_patch(Circle((0,0), 1.18, fill=False, linewidth=3))
+    ax.add_patch(Circle((0,0), 0.86, fill=False, linestyle='--', linewidth=2))
 
     # ========================================================
-    # STATOR FLUX (RED)
+    # ROTATING MAGNETIC FIELD (VECTOR FIELD)
     # ========================================================
-    R_s = r_mean + 0.10 * np.cos(p * theta - wt_rad)
-    Xs = R_s * np.cos(theta)
-    Ys = R_s * np.sin(theta)
-    ax.plot(Xs, Ys, color="red", linewidth=2.5, label="Stator Flux")
+    for th in angles:
 
-    # ========================================================
-    # ROTOR FLUX (GREEN - LAGGING)
-    # ========================================================
-    R_r = (r_mean - 0.12) + 0.08 * np.cos(p * theta - rotor_wt)
-    Xr = R_r * np.cos(theta)
-    Yr = R_r * np.sin(theta)
-    ax.plot(Xr, Yr, color="green", linewidth=2.5, label="Rotor Flux")
+        # spatial + time variation (RMF)
+        B = Bm * np.cos(p * th - wt_rad)
 
-    # ========================================================
-    # RESULTANT FLUX (BLUE - SUPERPOSITION)
-    # ========================================================
-    R_res = r_mean + 0.10 * np.cos(p * theta - wt_rad) + 0.08 * np.cos(p * theta - rotor_wt)
-    Xres = R_res * np.cos(theta)
-    Yres = R_res * np.sin(theta)
-    ax.plot(Xres, Yres, color="blue", linewidth=3.5, label="Resultant Flux")
+        # vector direction (radial for visualization)
+        x = np.cos(th)
+        y = np.sin(th)
+
+        # arrow length scaled by flux
+        dx = 0.35 * B * x
+        dy = 0.35 * B * y
+
+        ax.arrow(
+            x*0.8,
+            y*0.8,
+            dx,
+            dy,
+            head_width=0.05,
+            head_length=0.07,
+            color="purple" if B >= 0 else "orange",
+            alpha=0.9
+        )
 
     # ========================================================
     # LABELS
     # ========================================================
-    ax.text(0, 0, "ROTOR CORE", ha='center', fontweight='bold')
+    ax.text(0, 0, "ROTOR", ha='center', fontweight='bold')
     ax.text(0, 1.48, "STATOR", ha='center', fontweight='bold')
 
     ax.text(
         0,
         -1.35,
-        "Red = Stator | Green = Rotor (Lag) | Blue = Resultant Field",
+        "Purple = Positive RMF | Orange = Negative RMF (instantaneous direction)",
         ha='center',
-        fontsize=11,
+        fontsize=10,
         fontweight='bold'
     )
 
-    ax.text(0, r_mean + 0.03, "Flux Zero Reference (Mean Air-Gap)", ha='center')
+    ax.text(
+        0,
+        0.95,
+        "Rotating Magnetic Field (RMF)",
+        ha='center',
+        fontsize=12,
+        fontweight='bold'
+    )
 
     # ========================================================
     # POLES
@@ -138,8 +122,8 @@ while run:
         label = "N" if k % 2 == 0 else "S"
 
         ax.text(
-            1.28*np.cos(ang),
-            1.28*np.sin(ang),
+            1.25*np.cos(ang),
+            1.25*np.sin(ang),
             label,
             fontsize=14,
             fontweight='bold',
@@ -147,13 +131,12 @@ while run:
         )
 
     # ========================================================
-    # FINAL FORMAT
+    # FORMAT
     # ========================================================
     ax.set_aspect('equal')
-    ax.set_xlim(-1.55, 1.55)
-    ax.set_ylim(-1.55, 1.55)
+    ax.set_xlim(-1.6, 1.6)
+    ax.set_ylim(-1.6, 1.6)
     ax.axis('off')
-    ax.legend(loc="upper right")
 
     plot.pyplot(fig)
     plt.close(fig)
