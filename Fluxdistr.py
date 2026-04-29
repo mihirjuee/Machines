@@ -186,7 +186,7 @@ st.pyplot(fig2)
 # THEORY
 # ============================================================
 st.markdown("---")
-st.subheader("📘 Correct Equation")
+st.subheader("📘 Key Equation")
 
 st.markdown(f"""
 ### Resultant Air-Gap Flux:
@@ -199,7 +199,7 @@ Where:
 
 ---
 
-## Corrections:
+## Clarification:
 ### Bm:
 Controls amplitude directly
 
