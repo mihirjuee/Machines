@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Induction Motor Air-Gap Flux with Slip Effect
-NEW:
-✅ Rotor lag animation
-✅ Slip control
-✅ Stator vs rotor field separation
+Induction Motor Air-Gap Flux Visualization
+FINAL UPGRADE:
+✅ Stator flux (red)
+✅ Rotor flux (green)
+✅ Resultant flux (blue)
 """
 
 import streamlit as st
@@ -16,9 +16,9 @@ import time
 # ============================================================
 # PAGE CONFIG
 # ============================================================
-st.set_page_config(page_title="Slip Effect Motor Animation", layout="wide")
+st.set_page_config(page_title="3-Flux Motor Model", layout="wide")
 
-st.title("⚡ Induction Motor Air-Gap Flux with Slip Effect")
+st.title("⚡ Stator, Rotor & Resultant Flux Distribution")
 
 # ============================================================
 # SIDEBAR
@@ -27,7 +27,7 @@ f = st.sidebar.slider("Frequency (Hz)", 1, 100, 50)
 pole = st.sidebar.selectbox("Poles", [2, 4, 6, 8], index=1)
 Bm = st.sidebar.slider("Bm (T)", 0.1, 3.0, 1.0)
 
-slip = st.sidebar.slider("Slip (s)", 0.0, 0.3, 0.05, 0.01)
+slip = st.sidebar.slider("Slip (s)", 0.0, 0.3, 0.05)
 speed = st.sidebar.slider("Animation Speed", 1, 20, 5)
 
 run = st.sidebar.checkbox("Run", True)
@@ -38,7 +38,7 @@ run = st.sidebar.checkbox("Run", True)
 p = pole // 2
 Ns = 120 * f / pole
 
-theta = np.linspace(0, 2*np.pi, 2000)
+theta = np.linspace(0, 2*np.pi, 2500)
 
 metric = st.empty()
 plot = st.empty()
@@ -53,19 +53,23 @@ while run:
     wt_rad = np.radians(wt)
 
     # ========================================================
-    # STATOR FIELD (SYNCHRONOUS SPEED)
+    # STATOR FLUX (RMF)
     # ========================================================
     B_stator = 1.5 * Bm * np.cos(p * theta - wt_rad)
 
     # ========================================================
-    # ROTOR FIELD (SLOWER DUE TO SLIP)
-    # Rotor speed = (1 - slip)
+    # ROTOR FLUX (LAGGING DUE TO SLIP)
     # ========================================================
     rotor_wt = wt_rad * (1 - slip)
     B_rotor = 1.2 * Bm * np.cos(p * theta - rotor_wt)
 
     # ========================================================
-    # AIR-GAP SHAPE (STATOR BASED)
+    # RESULTANT FLUX
+    # ========================================================
+    B_res = B_stator + B_rotor
+
+    # ========================================================
+    # AIR-GAP GEOMETRY (for visualization)
     # ========================================================
     r_mean = 0.86
     scale = 0.10 * Bm
@@ -76,59 +80,55 @@ while run:
     Y = R * np.sin(theta)
 
     # ========================================================
-    # COLOR MAP FOR STATOR FIELD
-    # ========================================================
-    norm = plt.Normalize(-1.5*Bm, 1.5*Bm)
-    cmap = plt.cm.coolwarm
-
-    colors = cmap(norm(B_stator))
-
-    # ========================================================
     # FIGURE
     # ========================================================
     fig, ax = plt.subplots(figsize=(9, 9))
 
-    # Rotor / stator geometry
-    ax.add_patch(Circle((0,0), 0.55, fill=False, linewidth=3))
-    ax.add_patch(Circle((0,0), 1.18, fill=False, linewidth=3))
-    ax.add_patch(Circle((0,0), r_mean, fill=False, linestyle='--', linewidth=2))
+    # Machine geometry
+    ax.add_patch(Circle((0,0), 0.55, fill=False, linewidth=3))   # rotor
+    ax.add_patch(Circle((0,0), 1.18, fill=False, linewidth=3))   # stator
+    ax.add_patch(Circle((0,0), r_mean, fill=False, linestyle='--', linewidth=2))  # flux zero
 
     # ========================================================
-    # STATOR FLUX (RED-BLUE COLORED)
+    # STATOR FLUX (RED)
     # ========================================================
-    for i in range(len(theta)-1):
-        ax.plot(
-            [X[i], X[i+1]],
-            [Y[i], Y[i+1]],
-            color=colors[i],
-            linewidth=3
-        )
+    R_s = r_mean + 0.10 * np.cos(p * theta - wt_rad)
+    Xs = R_s * np.cos(theta)
+    Ys = R_s * np.sin(theta)
+    ax.plot(Xs, Ys, color="red", linewidth=2.5, label="Stator Flux")
 
     # ========================================================
-    # ROTOR FLUX (GREEN LAGGING FIELD)
+    # ROTOR FLUX (GREEN - LAGGING)
     # ========================================================
-    Rr = (r_mean - 0.12) + 0.08 * np.cos(p * theta - rotor_wt)
-    Xr = Rr * np.cos(theta)
-    Yr = Rr * np.sin(theta)
+    R_r = (r_mean - 0.12) + 0.08 * np.cos(p * theta - rotor_wt)
+    Xr = R_r * np.cos(theta)
+    Yr = R_r * np.sin(theta)
+    ax.plot(Xr, Yr, color="green", linewidth=2.5, label="Rotor Flux")
 
-    ax.plot(Xr, Yr, color="green", linewidth=2.5, alpha=0.9)
+    # ========================================================
+    # RESULTANT FLUX (BLUE - SUPERPOSITION)
+    # ========================================================
+    R_res = r_mean + 0.10 * np.cos(p * theta - wt_rad) + 0.08 * np.cos(p * theta - rotor_wt)
+    Xres = R_res * np.cos(theta)
+    Yres = R_res * np.sin(theta)
+    ax.plot(Xres, Yres, color="blue", linewidth=3.5, label="Resultant Flux")
 
     # ========================================================
-    # SLIP VISUAL LABEL
+    # LABELS
     # ========================================================
+    ax.text(0, 0, "ROTOR CORE", ha='center', fontweight='bold')
+    ax.text(0, 1.48, "STATOR", ha='center', fontweight='bold')
+
     ax.text(
         0,
         -1.35,
-        f"Slip s = {slip:.2f} → Rotor lags stator field",
+        "Red = Stator | Green = Rotor (Lag) | Blue = Resultant Field",
         ha='center',
-        fontsize=12,
+        fontsize=11,
         fontweight='bold'
     )
 
-    # ========================================================
-    # ZERO REFERENCE
-    # ========================================================
-    ax.text(0, r_mean + 0.03, "Flux Zero Reference", ha='center', fontweight='bold')
+    ax.text(0, r_mean + 0.03, "Flux Zero Reference (Mean Air-Gap)", ha='center')
 
     # ========================================================
     # POLES
@@ -147,15 +147,13 @@ while run:
         )
 
     # ========================================================
-    # LABELS
+    # FINAL FORMAT
     # ========================================================
-    ax.text(0, 0, "ROTOR CORE", ha='center', fontweight='bold')
-    ax.text(0, 1.48, "STATOR", ha='center', fontweight='bold')
-
     ax.set_aspect('equal')
     ax.set_xlim(-1.55, 1.55)
     ax.set_ylim(-1.55, 1.55)
     ax.axis('off')
+    ax.legend(loc="upper right")
 
     plot.pyplot(fig)
     plt.close(fig)
@@ -171,7 +169,7 @@ while run:
         c4.metric("Ns RPM", f"{Ns:.1f}")
 
     # ========================================================
-    # UPDATE TIME
+    # UPDATE ANGLE
     # ========================================================
     wt = (wt + speed) % 360
     time.sleep(0.05)
