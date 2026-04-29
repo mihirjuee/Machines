@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-RMF Vector Field Animation (3-Phase Induction Motor)
+Lagging Field Coupling in Induction Motor RMF
 NEW:
-✅ Rotating magnetic field arrows (vector field)
-✅ True RMF visualization
+✅ Stator vs rotor rotating vectors
+✅ Phase lag due to slip
+✅ Coupling (torque-producing angle)
 """
 
 import streamlit as st
@@ -15,19 +16,19 @@ import time
 # ============================================================
 # CONFIG
 # ============================================================
-st.set_page_config(page_title="RMF Vector Field", layout="wide")
+st.set_page_config(page_title="Lagging Field Coupling", layout="wide")
 
-st.title("⚡ Rotating Magnetic Field (Vector Animation)")
+st.title("⚡ Lagging Field Coupling in Induction Motor")
 
 # ============================================================
 # SIDEBAR
 # ============================================================
 f = st.sidebar.slider("Frequency (Hz)", 1, 100, 50)
 pole = st.sidebar.selectbox("Poles", [2, 4, 6, 8], index=1)
-Bm = st.sidebar.slider("Bm (T)", 0.1, 3.0, 1.0)
+Bm = st.sidebar.slider("Bm", 0.1, 3.0, 1.0)
 
-slip = st.sidebar.slider("Slip (optional)", 0.0, 0.3, 0.05)
-speed = st.sidebar.slider("Animation Speed", 1, 20, 5)
+slip = st.sidebar.slider("Slip", 0.0, 0.3, 0.05)
+speed = st.sidebar.slider("Speed", 1, 20, 5)
 
 run = st.sidebar.checkbox("Run", True)
 
@@ -37,9 +38,7 @@ run = st.sidebar.checkbox("Run", True)
 p = pole // 2
 Ns = 120 * f / pole
 
-# Vector positions in air-gap
-n_vectors = pole * 6
-angles = np.linspace(0, 2*np.pi, n_vectors, endpoint=False)
+angles = np.linspace(0, 2*np.pi, pole*6)
 
 metric = st.empty()
 plot = st.empty()
@@ -47,48 +46,76 @@ plot = st.empty()
 wt = 0
 
 # ============================================================
-# ANIMATION LOOP
+# LOOP
 # ============================================================
 while run:
 
     wt_rad = np.radians(wt)
 
-    # ========================================================
-    # FIGURE
-    # ========================================================
     fig, ax = plt.subplots(figsize=(9, 9))
 
-    # Machine geometry
+    # machine geometry
     ax.add_patch(Circle((0,0), 0.55, fill=False, linewidth=3))
     ax.add_patch(Circle((0,0), 1.18, fill=False, linewidth=3))
     ax.add_patch(Circle((0,0), 0.86, fill=False, linestyle='--', linewidth=2))
 
     # ========================================================
-    # ROTATING MAGNETIC FIELD (VECTOR FIELD)
+    # STATOR FIELD (REFERENCE RMF)
     # ========================================================
     for th in angles:
 
-        # spatial + time variation (RMF)
-        B = Bm * np.cos(p * th - wt_rad)
+        Bs = np.cos(p*th - wt_rad)
 
-        # vector direction (radial for visualization)
         x = np.cos(th)
         y = np.sin(th)
-
-        # arrow length scaled by flux
-        dx = 0.35 * B * x
-        dy = 0.35 * B * y
 
         ax.arrow(
             x*0.8,
             y*0.8,
-            dx,
-            dy,
-            head_width=0.05,
-            head_length=0.07,
-            color="purple" if B >= 0 else "orange",
-            alpha=0.9
+            0.35*Bs*x,
+            0.35*Bs*y,
+            color="red",
+            alpha=0.9,
+            head_width=0.05
         )
+
+    # ========================================================
+    # ROTOR FIELD (LAGGING)
+    # ========================================================
+    rotor_wt = wt_rad * (1 - slip)
+
+    for th in angles:
+
+        Br = 0.9 * np.cos(p*th - rotor_wt)
+
+        x = np.cos(th)
+        y = np.sin(th)
+
+        ax.arrow(
+            x*0.6,
+            y*0.6,
+            0.30*Br*x,
+            0.30*Br*y,
+            color="blue",
+            alpha=0.8,
+            head_width=0.04
+        )
+
+    # ========================================================
+    # COUPLING INDICATION (TORQUE ANGLE)
+    # ========================================================
+    delta = wt_rad - rotor_wt
+
+    torque_indicator = np.sin(delta)
+
+    ax.text(
+        0,
+        -1.35,
+        f"Coupling Angle δ = {np.degrees(delta):.1f}° | Torque ∝ sin(δ) = {torque_indicator:.2f}",
+        ha='center',
+        fontsize=11,
+        fontweight='bold'
+    )
 
     # ========================================================
     # LABELS
@@ -98,19 +125,10 @@ while run:
 
     ax.text(
         0,
-        -1.35,
-        "Purple = Positive RMF | Orange = Negative RMF (instantaneous direction)",
+        0.95,
+        "Red = Stator RMF | Blue = Rotor Induced Field (Lagging)",
         ha='center',
         fontsize=10,
-        fontweight='bold'
-    )
-
-    ax.text(
-        0,
-        0.95,
-        "Rotating Magnetic Field (RMF)",
-        ha='center',
-        fontsize=12,
         fontweight='bold'
     )
 
@@ -130,9 +148,7 @@ while run:
             ha='center'
         )
 
-    # ========================================================
-    # FORMAT
-    # ========================================================
+    # format
     ax.set_aspect('equal')
     ax.set_xlim(-1.6, 1.6)
     ax.set_ylim(-1.6, 1.6)
@@ -151,8 +167,6 @@ while run:
         c3.metric("Slip", f"{slip:.2f}")
         c4.metric("Ns RPM", f"{Ns:.1f}")
 
-    # ========================================================
-    # UPDATE ANGLE
-    # ========================================================
+    # update time
     wt = (wt + speed) % 360
     time.sleep(0.05)
