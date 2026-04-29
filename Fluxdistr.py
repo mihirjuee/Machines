@@ -178,14 +178,92 @@ st.pyplot(fig2)
 # ============================================================
 # POLAR SINUSOID
 # ============================================================
-st.subheader("🧭 Polar Sinusoidal Distribution")
+# ============================================================
+# POLAR FLUX DISTRIBUTION (NO NEGATIVE RADIAL VALUES)
+# Shows:
+# ✅ Flux magnitude only as outward radial plot
+# ✅ North/South pole locations explicitly marked
+# ✅ Correct NSNS distribution for multi-pole machines
+# ✅ Flux arrows for each pole
+# ============================================================
+st.subheader("🧭 Polar Pole Distribution in Space")
 
 fig3 = plt.figure(figsize=(8,8))
 ax3 = fig3.add_subplot(111, projection='polar')
 
-ax3.plot(theta_mech, B, linewidth=3)
+# ------------------------------------------------------------
+# Convert signed sinusoid into magnitude-only radius
+# Negative regions are represented by S poles instead of
+# plotting negative radius
+# ------------------------------------------------------------
+B_mag = np.abs(B)
 
-ax3.set_title("Signed Sinusoidal Flux Density")
+# Plot only positive magnitude
+ax3.plot(theta_mech, B_mag, linewidth=3)
+
+# ============================================================
+# POLE POSITIONS
+# For P poles:
+# Pole spacing = 360/P mechanical degrees
+# Alternate N-S-N-S
+# ============================================================
+pole_spacing = 2 * np.pi / pole
+
+for k in range(pole):
+
+    # Pole center angle
+    pole_angle = (wt / p) + k * pole_spacing
+
+    # Alternate labels
+    pole_label = "N" if k % 2 == 0 else "S"
+
+    # Flux arrow magnitude
+    arrow_length = 1.5 * Bm
+
+    # --------------------------------------------------------
+    # Arrow:
+    # North -> outward
+    # South -> inward visualized by same outward arrow but labeled S
+    # --------------------------------------------------------
+    ax3.annotate(
+        "",
+        xy=(pole_angle, arrow_length),
+        xytext=(pole_angle, 0),
+        arrowprops=dict(
+            lw=2,
+            arrowstyle="->"
+        )
+    )
+
+    # Pole label
+    ax3.text(
+        pole_angle,
+        arrow_length + 0.15*Bm,
+        pole_label,
+        fontsize=16,
+        fontweight='bold',
+        ha='center',
+        va='center'
+    )
+
+# ============================================================
+# OPTIONAL: Mark pole boundaries
+# ============================================================
+for k in range(pole):
+    boundary_angle = k * pole_spacing
+    ax3.plot(
+        [boundary_angle, boundary_angle],
+        [0, np.max(B_mag)],
+        linestyle='--',
+        linewidth=1
+    )
+
+# ============================================================
+# SETTINGS
+# ============================================================
+ax3.set_title(f"{pole}-Pole Spatial Flux Distribution (NS Alternating)")
+ax3.set_rticks([])
+ax3.grid(True)
 
 st.pyplot(fig3)
 
