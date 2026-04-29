@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 Animated 3-Phase Induction Motor Air-Gap Flux Waveform
-Added:
-✅ Flux Zero Reference Text in animation figure
-✅ Positive / Negative flux labels
-✅ B = 0 reference
+FIXED:
+✅ Flux Zero Reference = dotted mean air-gap circle
+✅ Positive Flux = outside dotted circle
+✅ Negative Flux = inside dotted circle
+✅ True rotating sinusoidal waveform
 """
 
 import streamlit as st
@@ -13,7 +14,9 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
 import time
 
-# ---------------- PAGE CONFIG ----------------
+# ============================================================
+# PAGE CONFIG
+# ============================================================
 st.set_page_config(
     page_title="Animated Air-Gap Flux Waveform",
     page_icon="⚡",
@@ -21,9 +24,11 @@ st.set_page_config(
 )
 
 st.title("⚡ Animated 3-Phase Induction Motor Air-Gap Flux")
-st.markdown("### Real-time rotating sinusoidal magnetic field with flux reference labels")
+st.markdown("### Rotating sinusoidal magnetic field with correct flux zero reference")
 
-# ---------------- SIDEBAR ----------------
+# ============================================================
+# SIDEBAR
+# ============================================================
 st.sidebar.header("Motor Parameters")
 
 f = st.sidebar.slider("Supply Frequency (Hz)", 1, 100, 50)
@@ -34,44 +39,50 @@ speed = st.sidebar.slider("Animation Speed", 1, 20, 5)
 
 run = st.sidebar.checkbox("▶️ Run Animation", True)
 
-# ---------------- CONSTANTS ----------------
-p = pole // 2  # Pole pairs
+# ============================================================
+# CONSTANTS
+# ============================================================
+p = pole // 2                      # Pole pairs
+Ns = 120 * f / pole               # Synchronous speed
 
 theta_mech_deg = np.linspace(0, 360, 4000)
 theta_mech = np.radians(theta_mech_deg)
 
-Ns = 120 * f / pole
-
-# ---------------- PLACEHOLDERS ----------------
+# ============================================================
+# STREAMLIT PLACEHOLDERS
+# ============================================================
 metric_placeholder = st.empty()
 plot_placeholder = st.empty()
 graph_placeholder = st.empty()
 
-# ---------------- ANIMATION LOOP ----------------
+# ============================================================
+# ANIMATION LOOP
+# ============================================================
 wt_deg = 0
 
 while run:
 
     wt = np.radians(wt_deg)
 
-    # ============================================================
-    # RESULTANT AIR-GAP FLUX
-    # ============================================================
+    # ========================================================
+    # RESULTANT FLUX DENSITY
+    # ========================================================
     B = 1.5 * Bm * np.cos(p * theta_mech - wt)
 
-    # Air-gap waveform radius
-    r_mean = 0.86
-    scale = 0.10 * Bm
+    # ========================================================
+    # AIR-GAP WAVEFORM
+    # ========================================================
+    r_mean = 0.86              # Zero reference circle
+    scale = 0.10 * Bm          # Flux amplitude scaling
 
     R_wave = r_mean + scale * np.cos(p * theta_mech - wt)
 
-    # Cartesian conversion
     X_wave = R_wave * np.cos(theta_mech)
     Y_wave = R_wave * np.sin(theta_mech)
 
-    # ============================================================
+    # ========================================================
     # METRICS
-    # ============================================================
+    # ========================================================
     with metric_placeholder.container():
         col1, col2, col3, col4 = st.columns(4)
 
@@ -80,20 +91,28 @@ while run:
         col3.metric("Peak Flux", f"{1.5 * Bm:.2f}")
         col4.metric("Synchronous Speed", f"{Ns:.1f} RPM")
 
-    # ============================================================
-    # POLAR AIR-GAP ANIMATION
-    # ============================================================
+    # ========================================================
+    # AIR-GAP ANIMATION FIGURE
+    # ========================================================
     fig, ax = plt.subplots(figsize=(9, 9))
 
-    # Radii
+    # Geometry
     r_rotor = 0.55
     r_stator = 1.18
     r_axis = r_mean
 
-    # Rotor & stator circles
+    # Rotor / stator
     rotor = Circle((0, 0), r_rotor, fill=False, linewidth=3)
     stator = Circle((0, 0), r_stator, fill=False, linewidth=3)
-    axis_circle = Circle((0, 0), r_axis, fill=False, linestyle='--', linewidth=1)
+
+    # Dotted zero-flux reference circle
+    axis_circle = Circle(
+        (0, 0),
+        r_axis,
+        fill=False,
+        linestyle='--',
+        linewidth=2
+    )
 
     ax.add_patch(rotor)
     ax.add_patch(stator)
@@ -103,24 +122,26 @@ while run:
     ax.plot([-r_stator, r_stator], [0, 0], linestyle='--', linewidth=1)
     ax.plot([0, 0], [-r_stator, r_stator], linestyle='--', linewidth=1)
 
-    # ============================================================
-    # FLUX WAVEFORM
-    # ============================================================
+    # ========================================================
+    # ROTATING FLUX WAVEFORM
+    # ========================================================
     ax.plot(X_wave, Y_wave, linewidth=4)
 
-    # ============================================================
-    # FLUX ZERO REFERENCE TEXT
-    # ============================================================
+    # ========================================================
+    # FLUX REFERENCE LABELS
+    # ========================================================
+    # Dotted circle = zero reference
     ax.text(
         0,
-        -0.08,
-        "Flux Zero Reference Axis",
+        r_axis + 0.03,
+        "Flux Zero Reference",
         fontsize=11,
         fontweight='bold',
         ha='center',
-        va='center'
+        va='bottom'
     )
 
+    # Positive flux = waveform expands outside zero circle
     ax.text(
         0,
         r_mean + scale + 0.18,
@@ -130,28 +151,21 @@ while run:
         ha='center'
     )
 
+    # Negative flux = waveform contracts inside zero circle
     ax.text(
         0,
-        -(r_mean + scale + 0.18),
+        r_rotor + 0.12,
         "- Negative Flux",
         fontsize=11,
         fontweight='bold',
         ha='center'
     )
 
-    ax.text(
-        0,
-        0.12,
-        "B = 0",
-        fontsize=12,
-        fontweight='bold',
-        ha='center'
-    )
-
-    # ============================================================
-    # N/S POLE LABELS
-    # ============================================================
+    # ========================================================
+    # N / S POLE LABELS
+    # ========================================================
     for k in range(pole):
+
         angle = (2 * np.pi / pole) * k + wt / p
 
         label = "N" if k % 2 == 0 else "S"
@@ -166,10 +180,11 @@ while run:
             va='center'
         )
 
-    # ============================================================
+    # ========================================================
     # DEGREE MARKINGS
-    # ============================================================
+    # ========================================================
     for ang in np.arange(0, 360, 360 / pole):
+
         a = np.radians(ang)
 
         ax.text(
@@ -180,9 +195,9 @@ while run:
             ha='center'
         )
 
-    # ============================================================
+    # ========================================================
     # LABELS
-    # ============================================================
+    # ========================================================
     ax.text(
         0,
         0,
@@ -205,14 +220,14 @@ while run:
     ax.text(
         0,
         -1.48,
-        f"{pole}-Pole Rotating Flux",
+        f"{pole}-Pole Rotating Air-Gap Flux",
         ha='center',
         fontsize=12
     )
 
-    # ============================================================
+    # ========================================================
     # FORMATTING
-    # ============================================================
+    # ========================================================
     ax.set_aspect('equal')
     ax.set_xlim(-1.55, 1.55)
     ax.set_ylim(-1.55, 1.55)
@@ -221,9 +236,9 @@ while run:
     plot_placeholder.pyplot(fig)
     plt.close(fig)
 
-    # ============================================================
+    # ========================================================
     # LINEAR FLUX DISTRIBUTION
-    # ============================================================
+    # ========================================================
     fig2, ax2 = plt.subplots(figsize=(14, 5))
 
     ax2.plot(
@@ -233,10 +248,10 @@ while run:
         label="Resultant Flux Density"
     )
 
-    # Zero reference
+    # Zero reference line
     ax2.axhline(0, linestyle='--', linewidth=2)
 
-    # Flux zero label
+    # Zero reference text
     ax2.text(
         355,
         0.02 * np.max(B),
@@ -247,7 +262,7 @@ while run:
         va='bottom'
     )
 
-    # Pole division lines
+    # Pole divisions
     for k in range(pole + 1):
         ax2.axvline(k * 360 / pole, linestyle=':', linewidth=1)
 
@@ -280,9 +295,9 @@ while run:
     graph_placeholder.pyplot(fig2)
     plt.close(fig2)
 
-    # ============================================================
+    # ========================================================
     # ANIMATION STEP
-    # ============================================================
+    # ========================================================
     wt_deg = (wt_deg + speed) % 360
 
     time.sleep(0.05)
@@ -292,5 +307,6 @@ while run:
 # ============================================================
 st.markdown("---")
 st.success(
-    "⚡ Distributed 3-phase windings produce a sinusoidal rotating magnetic field with clear positive, negative, and zero-flux references."
+    "⚡ The dotted circle represents zero air-gap flux reference. "
+    "Wave expansion outside it is positive flux, and contraction inside it is negative flux."
 )
