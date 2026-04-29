@@ -99,7 +99,7 @@ while run:
     ax.text(
         0,
         r_mean + 0.03,
-        "Flux Zero Reference (Mean Air-Gap)",
+        "Flux Zero Reference",
         ha='center',
         fontsize=11,
         fontweight='bold'
