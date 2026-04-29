@@ -179,94 +179,130 @@ st.pyplot(fig2)
 # POLAR SINUSOID
 # ============================================================
 # ============================================================
-# POLAR FLUX DISTRIBUTION (NO NEGATIVE RADIAL VALUES)
+# POLAR FLUX DISTRIBUTION WITH REAL FLUX PATH
 # Shows:
-# ✅ Flux magnitude only as outward radial plot
-# ✅ North/South pole locations explicitly marked
-# ✅ Correct NSNS distribution for multi-pole machines
-# ✅ Flux arrows for each pole
+# ✅ Flux lines connect North → South
+# ✅ NSNS pole arrangement for multi-pole machines
+# ✅ No negative radial plotting
+# ✅ Air-gap field path visualization
 # ============================================================
-st.subheader("🧭 Polar Pole Distribution in Space")
+st.subheader("🧭 Polar Flux Path (North → South)")
 
-fig3 = plt.figure(figsize=(8,8))
+fig3 = plt.figure(figsize=(9,9))
 ax3 = fig3.add_subplot(111, projection='polar')
 
-# ------------------------------------------------------------
-# Convert signed sinusoid into magnitude-only radius
-# Negative regions are represented by S poles instead of
-# plotting negative radius
-# ------------------------------------------------------------
+# ============================================================
+# MAGNITUDE ONLY FOR ENVELOPE
+# ============================================================
 B_mag = np.abs(B)
-
-# Plot only positive magnitude
-ax3.plot(theta_mech, B_mag, linewidth=3)
+ax3.plot(theta_mech, B_mag, linewidth=2)
 
 # ============================================================
-# POLE POSITIONS
-# For P poles:
-# Pole spacing = 360/P mechanical degrees
-# Alternate N-S-N-S
+# POLE SPACING
 # ============================================================
 pole_spacing = 2 * np.pi / pole
 
+# Pole center radius
+r_pole = np.max(B_mag)
+
+# Store pole positions
+pole_angles = []
+
+# ============================================================
+# DRAW POLES
+# ============================================================
 for k in range(pole):
 
-    # Pole center angle
     pole_angle = (wt / p) + k * pole_spacing
+    pole_angles.append(pole_angle)
 
-    # Alternate labels
     pole_label = "N" if k % 2 == 0 else "S"
 
-    # Flux arrow magnitude
-    arrow_length = 1.5 * Bm
+    # Pole radial marker
+    ax3.plot(
+        [pole_angle, pole_angle],
+        [0, r_pole],
+        linewidth=2
+    )
 
-    # --------------------------------------------------------
-    # Arrow:
-    # North -> outward
-    # South -> inward visualized by same outward arrow but labeled S
-    # --------------------------------------------------------
+    # Pole label
+    ax3.text(
+        pole_angle,
+        r_pole + 0.2 * Bm,
+        pole_label,
+        fontsize=16,
+        fontweight='bold',
+        ha='center'
+    )
+
+# ============================================================
+# DRAW FLUX LINES FROM EACH N TO NEXT S
+# ============================================================
+# Flux leaves N and enters adjacent S through air-gap
+# ============================================================
+for k in range(0, pole, 2):
+
+    # North pole
+    theta_n = pole_angles[k]
+
+    # Adjacent South pole
+    theta_s = pole_angles[(k + 1) % pole]
+
+    # Smooth angular transition
+    if theta_s < theta_n:
+        theta_s += 2 * np.pi
+
+    theta_flux = np.linspace(theta_n, theta_s, 200)
+
+    # Arc bulges outward to resemble field path
+    r_flux = r_pole + 0.25 * Bm * np.sin(
+        np.pi * (theta_flux - theta_n) / (theta_s - theta_n)
+    )
+
+    # Flux line
+    ax3.plot(theta_flux, r_flux, linewidth=3)
+
+    # Arrow near center of flux path
+    mid_idx = len(theta_flux) // 2
+
     ax3.annotate(
         "",
-        xy=(pole_angle, arrow_length),
-        xytext=(pole_angle, 0),
+        xy=(theta_flux[mid_idx + 2], r_flux[mid_idx + 2]),
+        xytext=(theta_flux[mid_idx - 2], r_flux[mid_idx - 2]),
         arrowprops=dict(
             lw=2,
             arrowstyle="->"
         )
     )
 
-    # Pole label
-    ax3.text(
-        pole_angle,
-        arrow_length + 0.15*Bm,
-        pole_label,
-        fontsize=16,
-        fontweight='bold',
-        ha='center',
-        va='center'
+# ============================================================
+# OPTIONAL INNER RETURN PATH (Rotor side)
+# ============================================================
+for k in range(1, pole, 2):
+
+    theta_s = pole_angles[k]
+    theta_n = pole_angles[(k + 1) % pole]
+
+    if theta_n < theta_s:
+        theta_n += 2 * np.pi
+
+    theta_return = np.linspace(theta_s, theta_n, 200)
+
+    # Inner path
+    r_return = r_pole - 0.35 * Bm * np.sin(
+        np.pi * (theta_return - theta_s) / (theta_n - theta_s)
     )
 
-# ============================================================
-# OPTIONAL: Mark pole boundaries
-# ============================================================
-for k in range(pole):
-    boundary_angle = k * pole_spacing
-    ax3.plot(
-        [boundary_angle, boundary_angle],
-        [0, np.max(B_mag)],
-        linestyle='--',
-        linewidth=1
-    )
+    ax3.plot(theta_return, r_return, linestyle='--', linewidth=2)
 
 # ============================================================
 # SETTINGS
 # ============================================================
-ax3.set_title(f"{pole}-Pole Spatial Flux Distribution (NS Alternating)")
+ax3.set_title(f"{pole}-Pole Flux Lines (North → South)")
 ax3.set_rticks([])
 ax3.grid(True)
 
 st.pyplot(fig3)
-
 # ============================================================
 # THEORY
 # ============================================================
