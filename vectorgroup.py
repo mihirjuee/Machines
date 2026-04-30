@@ -1,34 +1,29 @@
 # ============================================================
-# ADVANCED THREE-PHASE TRANSFORMER VECTOR GROUP ANALYZER
-# Streamlit App
-# Features:
-# ✅ Animated rotating phasors
-# ✅ HV/LV vector group selector
-# ✅ Clock notation visualizer
-# ✅ Parallel compatibility checker
-# ✅ Transformer application guide
-# ✅ Dynamic phasor shift simulation
+# STATIC THREE-PHASE TRANSFORMER VECTOR GROUP ANALYZER
+# UPDATED:
+# ✅ Static phasor diagram (no animation)
+# ✅ Only valid clock numbers shown based on winding combination
+# ✅ Clean educational design
 # ============================================================
 
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 from matplotlib.patches import Circle
-from io import BytesIO
 
 # ---------------- PAGE CONFIG ----------------
-st.set_page_config(page_title="Advanced Transformer Vector Group Analyzer", layout="wide")
+st.set_page_config(page_title="Transformer Vector Group Analyzer", layout="wide")
 
-st.title("⚡ Advanced 3-Phase Transformer Vector Group Analyzer")
+st.title("⚡ Static 3-Phase Transformer Vector Group Analyzer")
 
-st.markdown("""
-### Visualize transformer vector groups dynamically:
-- Animated phasor rotation
-- Clock displacement
-- Parallel compatibility
-- Engineering applications
-""")
+# ---------------- VALID CLOCK LOGIC ----------------
+def get_valid_clocks(hv, lv):
+    # Same connection types → 0 or 6
+    if (hv == "D" and lv == "d") or (hv == "Y" and lv == "y") or (hv == "Z" and lv == "z"):
+        return [0, 6]
+
+    # Delta-Star / Star-Delta / Zigzag combinations
+    return [1, 5, 7, 11]
 
 # ---------------- SIDEBAR ----------------
 st.sidebar.header("Transformer Configuration")
@@ -36,14 +31,22 @@ st.sidebar.header("Transformer Configuration")
 hv_type = st.sidebar.selectbox("HV Winding", ["D", "Y", "Z"])
 lv_type = st.sidebar.selectbox("LV Winding", ["d", "y", "z"])
 
-neutral = st.sidebar.checkbox("LV Neutral (n)", value=True)
+neutral = st.sidebar.checkbox(
+    "LV Neutral Available (n)",
+    value=True,
+    disabled=(lv_type == "d")
+)
 
-clock = st.sidebar.slider("Clock Number", 0, 11, 11)
+valid_clocks = get_valid_clocks(hv_type, lv_type)
 
-speed = st.sidebar.slider("Animation Speed", 0.5, 5.0, 1.0)
+clock = st.sidebar.selectbox(
+    "Valid Clock Number",
+    valid_clocks
+)
 
 # ---------------- VECTOR GROUP ----------------
 vector_group = hv_type + lv_type
+
 if neutral and lv_type in ["y", "z"]:
     vector_group += "n"
 
@@ -51,89 +54,90 @@ vector_group += str(clock)
 
 phase_shift = clock * 30
 
-# ---------------- HEADER DISPLAY ----------------
+# ---------------- DISPLAY ----------------
 col1, col2, col3 = st.columns(3)
 
 with col1:
     st.metric("Vector Group", vector_group)
 
 with col2:
-    st.metric("Phase Shift", f"{phase_shift}°")
+    st.metric("Clock Number", clock)
 
 with col3:
-    st.metric("Clock Position", f"{clock} o'clock")
+    st.metric("Phase Shift", f"{phase_shift}°")
 
-# ---------------- ANIMATION ----------------
-st.subheader("🎞️ Animated Phasor Rotation")
+# ---------------- STATIC PHASOR DIAGRAM ----------------
+st.subheader("📈 Static Phasor Diagram")
 
-fig, ax = plt.subplots(figsize=(7,7), subplot_kw={'projection': 'polar'})
+fig, ax = plt.subplots(figsize=(8,8), subplot_kw={'projection': 'polar'})
 
-def update(frame):
-    ax.clear()
+# HV Reference
+angles_primary = np.radians([90, -30, 210])  # RYB
+labels_primary = ['R', 'Y', 'B']
 
-    # Rotation angle
-    base_angle = np.radians(frame * speed)
+# LV Shift
+angles_secondary = angles_primary - np.radians(phase_shift)
+labels_secondary = ['r', 'y', 'b']
 
-    # Primary phasors
-    primary_angles = base_angle + np.radians([0, -120, 120])
+# Plot HV
+for angle, label in zip(angles_primary, labels_primary):
+    ax.annotate(
+        '',
+        xy=(angle, 1.0),
+        xytext=(angle, 0),
+        arrowprops=dict(width=2, headwidth=8)
+    )
+    ax.text(angle, 1.15, label, fontsize=12, fontweight='bold')
 
-    # Secondary phasors shifted
-    secondary_angles = primary_angles - np.radians(phase_shift)
+# Plot LV
+for angle, label in zip(angles_secondary, labels_secondary):
+    ax.annotate(
+        '',
+        xy=(angle, 0.75),
+        xytext=(angle, 0),
+        arrowprops=dict(width=1.5, headwidth=6)
+    )
+    ax.text(angle, 0.9, label, fontsize=11)
 
-    # Plot HV phasors
-    for angle, color, label in zip(primary_angles, ['r','g','b'], ['R','Y','B']):
-        ax.arrow(angle, 0, 0, 1.0,
-                 width=0.015, head_width=0.08, head_length=0.1,
-                 length_includes_head=True)
-        ax.text(angle, 1.15, label, fontsize=12)
+ax.set_title(f"{vector_group} Phasor Relationship", pad=20)
+ax.set_rticks([])
+ax.grid(True)
 
-    # Plot LV phasors
-    for angle, color, label in zip(secondary_angles, ['r','g','b'], ['r','y','b']):
-        ax.arrow(angle, 0, 0, 0.75,
-                 width=0.01, head_width=0.06, head_length=0.08,
-                 length_includes_head=True)
-        ax.text(angle, 0.9, label, fontsize=11)
-
-    ax.set_title(f"{vector_group} Dynamic Rotation")
-    ax.set_rticks([])
-    ax.grid(True)
-
-# Create animation
-ani = animation.FuncAnimation(fig, update, frames=360, interval=50)
-
-# Save GIF to buffer
-gif_path = "vector_group_animation.gif"
-ani.save(gif_path, writer="pillow", fps=20)
-
-# Display animation
-st.image(gif_path)
+st.pyplot(fig)
 
 # ---------------- CLOCK DIAL ----------------
 st.subheader("🕒 Clock Representation")
 
 fig2, ax2 = plt.subplots(figsize=(5,5))
-clock_circle = Circle((0,0), 1, fill=False, linewidth=2)
-ax2.add_patch(clock_circle)
 
-# Draw clock positions
+# Clock circle
+circle = Circle((0,0), 1, fill=False, linewidth=2)
+ax2.add_patch(circle)
+
+# Clock numbers
 for i in range(12):
     angle = np.radians(90 - i*30)
-    x = 0.85 * np.cos(angle)
-    y = 0.85 * np.sin(angle)
-    ax2.text(x, y, str(i if i != 0 else 12), ha='center', va='center')
-
-# LV position
-angle_lv = np.radians(90 - clock*30)
-ax2.arrow(0, 0,
-          0.7*np.cos(angle_lv),
-          0.7*np.sin(angle_lv),
-          head_width=0.08,
-          length_includes_head=True)
+    x = 0.88 * np.cos(angle)
+    y = 0.88 * np.sin(angle)
+    ax2.text(x, y, str(12 if i == 0 else i), ha='center', va='center')
 
 # HV fixed at 12
 ax2.arrow(0, 0, 0, 0.7,
-          head_width=0.08,
+          head_width=0.06,
+          linewidth=2,
           length_includes_head=True)
+
+# LV at selected clock
+lv_angle = np.radians(90 - clock*30)
+
+ax2.arrow(
+    0, 0,
+    0.7*np.cos(lv_angle),
+    0.7*np.sin(lv_angle),
+    head_width=0.06,
+    linewidth=2,
+    length_includes_head=True
+)
 
 ax2.set_xlim(-1.2, 1.2)
 ax2.set_ylim(-1.2, 1.2)
@@ -145,39 +149,39 @@ st.pyplot(fig2)
 # ---------------- PARALLEL CHECKER ----------------
 st.subheader("🔗 Parallel Operation Checker")
 
-vg2 = st.text_input("Enter second transformer vector group:")
+vg2 = st.text_input("Enter another vector group (e.g. Dyn11):")
 
 if vg2:
     if vg2.lower() == vector_group.lower():
         st.success("✅ Compatible for parallel operation")
     else:
-        st.error("❌ Not compatible due to vector group mismatch")
+        st.error("❌ Not compatible — vector group mismatch")
 
 # ---------------- APPLICATION GUIDE ----------------
-st.subheader("🏭 Practical Applications")
+st.subheader("🏭 Common Practical Uses")
 
-if "dyn11" in vector_group.lower():
-    st.info("Dyn11: Widely used in distribution systems due to neutral and harmonic suppression.")
-elif "dd0" in vector_group.lower():
-    st.info("Dd0: Industrial heavy-load applications, no phase shift.")
-elif "yd1" in vector_group.lower():
-    st.info("Yd1: Motor and industrial systems.")
+if vector_group.lower() == "dyn11":
+    st.info("Dyn11 → Most common for power distribution due to neutral + harmonic suppression.")
+elif vector_group.lower() == "dd0":
+    st.info("Dd0 → Industrial heavy-current applications.")
+elif vector_group.lower() == "yd1":
+    st.info("Yd1 → Industrial systems and motor loads.")
 else:
-    st.info("Specialized transformer application based on system requirements.")
+    st.info("Application depends on grounding, harmonics, and system design.")
 
-# ---------------- HARMONIC NOTES ----------------
-st.subheader("📚 Engineering Insights")
+# ---------------- NOTES ----------------
+st.subheader("📘 Engineering Notes")
 
 st.markdown("""
-### Why vector groups matter:
-✅ Synchronization  
-✅ Parallel operation  
-✅ Harmonic reduction  
-✅ Grounding compatibility  
-✅ Fault current behavior  
+### Valid clock numbers:
+✅ **0, 6** → Same type displacement  
+✅ **1, 5, 7, 11** → Delta-Star / Star-Delta displacement  
 
-### Important:
-**Clock notation determines LV phase displacement from HV reference.**
+### Why vector groups matter:
+- Parallel operation  
+- Harmonic suppression  
+- Neutral grounding  
+- System compatibility  
 """)
 
-st.warning("Incorrect vector group matching can cause severe circulating currents and equipment damage.")
+st.warning("Using invalid vector group combinations can cause phase mismatch and transformer damage.")
