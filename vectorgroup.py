@@ -63,37 +63,6 @@ with col_hv:
 with col_lv:
     st.pyplot(create_phasor_plot(f"LV Secondary Side ({groups[selected_grp]['label']})", lv_angles, lv_labels, "blue"))
 
-def display_winding_details(hv_type, lv_type, group_num):
-    st.subheader("🛠️ HV & LV Coil Connection Details")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.write("**High Voltage (HV) Side** [source: 1]")
-        if hv_type == 'Y':
-            st.markdown("- **Type**: Star (Wye)")
-            st.markdown("- **Terminals**: $A_1, B_1, C_1$ (Neutral) | $A_2, B_2, C_2$ (Lines)")
-        else:
-            st.markdown("- **Type**: Mesh (Delta)")
-            st.markdown("- **Connection**: $A_2-B_1, B_2-C_1, C_2-A_1$")
-
-    with col2:
-        st.write("**Low Voltage (LV) Side** [source: 1]")
-        if lv_type == 'y':
-            st.markdown("- **Type**: Star (Wye)")
-            st.markdown("- **Terminals**: $a_1, b_1, c_1$ (Neutral) | $a_2, b_2, c_2$ (Lines)")
-        elif lv_type == 'd':
-            st.markdown("- **Type**: Mesh (Delta)")
-            st.markdown("- **Connection**: $a_2-b_1, b_2-c_1, c_2-a_1$")
-        else:
-            st.markdown("- **Type**: Zig-Zag")
-            st.markdown("- **Note**: Requires 15% more turns than standard star/delta[cite: 1]")
-
-    st.info(f"**Vector Group Interpretation**: The secondary phase is at the {group_num} o'clock position relative to the primary[cite: 1].")
-
-# Example integration for a Dy11 transformer
-# display_winding_details('D', 'y', 11)
-
 # ---------------- TERMINAL LOGIC & NOTES[cite: 1] ----------------
 st.divider()
 st.markdown(f"""
