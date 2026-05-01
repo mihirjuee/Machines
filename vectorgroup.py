@@ -2,149 +2,137 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
-# ---------------- VALID GROUPS ----------------
+# ---------------- CONFIGURATION ----------------
 VALID_GROUPS = {
-    "Group I (0°)": {"clock": 0},
-    "Group II (180°)": {"clock": 6},
-    "Group III (30° Lag)": {"clock": 1},
-    "Group IV (30° Lead)": {"clock": 11},
+    "Group I (0°)": {"clock": 0, "label": "0°", "desc": "In-phase"},
+    "Group II (180°)": {"clock": 6, "label": "180°", "desc": "Phase opposition"},
+    "Group III (30° lag)": {"clock": 1, "label": "LV lags HV by 30°"},
+    "Group IV (30° lead)": {"clock": 11, "label": "LV leads HV by 30°"}
 }
 
-st.set_page_config(layout="wide")
-st.title("⚡ Transformer Actual Coil Connection Analyzer")
+st.set_page_config(page_title="Transformer Vector Group Analyzer", layout="wide")
+st.title("⚡ Transformer Vector Group & Coil Connection Analyzer")
 
 # ---------------- SIDEBAR ----------------
-group_name = st.sidebar.selectbox("Select Valid Group", list(VALID_GROUPS.keys()))
-hv_conn = st.sidebar.selectbox("HV Connection", ["Y", "D"])
-lv_conn = st.sidebar.selectbox("LV Connection", ["y", "d"])
+st.sidebar.header("Configuration")
+selected_grp_name = st.sidebar.selectbox("Select Vector Group", list(VALID_GROUPS.keys()))
+hv_type = st.sidebar.selectbox("HV Side", ["Y", "D"])
+lv_type = st.sidebar.selectbox("LV Side", ["y", "d"])
 
-clock = VALID_GROUPS[group_name]["clock"]
-vector_group = f"{hv_conn}{lv_conn}{clock}"
+selected_grp = VALID_GROUPS[selected_grp_name]
+clock = selected_grp["clock"]
+vg_name = f"{hv_type}{lv_type}{clock}"
 
-# ---------------- COIL POSITIONS ----------------
-HV_X = [2, 6, 10]
-LV_X = [2, 6, 10]
-
-
-# ---------------- DRAW COILS ----------------
-def draw_actual_connections(conn_type, is_hv=True, clock=0):
-    fig, ax = plt.subplots(figsize=(9, 5))
+# ---------------- COIL CONNECTION ----------------
+def draw_coil_connections(conn_type="Y", is_hv=True):
+    fig, ax = plt.subplots(figsize=(7,4))
+    ax.set_xlim(0,12)
+    ax.set_ylim(0,8)
 
     color = "red" if is_hv else "blue"
-    prefix = ["A", "B", "C"] if is_hv else ["a", "b", "c"]
-    x_positions = HV_X if is_hv else LV_X
+    prefix = ["A","B","C"] if is_hv else ["a","b","c"]
 
-    ax.set_xlim(0, 12)
-    ax.set_ylim(0, 8)
+    x_positions = [2, 6, 10]
 
     # Draw coils
-    terminals = {}
     for i, x in enumerate(x_positions):
-        ax.plot([x, x], [2, 5], color=color, lw=8, solid_capstyle='round')
+        ax.add_patch(plt.Rectangle((x-0.6,2),1.2,3,
+                                   edgecolor=color,
+                                   facecolor='none',
+                                   lw=2))
+        ax.text(x,5.4,f"{prefix[i]}1",ha='center',color=color,weight='bold')
+        ax.text(x,1.5,f"{prefix[i]}2",ha='center',color=color,weight='bold')
 
-        top = f"{prefix[i]}1"
-        bottom = f"{prefix[i]}2"
-
-        terminals[top] = (x, 5)
-        terminals[bottom] = (x, 2)
-
-        ax.text(x, 5.4, top, ha='center', color=color, weight='bold')
-        ax.text(x, 1.6, bottom, ha='center', color=color, weight='bold')
-
-    # ---------------- STAR ----------------
+    # STAR CONNECTION
     if conn_type.upper() == "Y":
-        neutral_y = 1
-        joined = [f"{prefix[0]}2", f"{prefix[1]}2", f"{prefix[2]}2"]
+        ax.plot([2,6],[1.8,1.8],'k',lw=2)
+        ax.plot([6,10],[1.8,1.8],'k',lw=2)
+        ax.text(11,1.8,"Neutral",fontsize=10)
 
-        for t in joined:
-            x, y = terminals[t]
-            ax.plot([x, x], [y, neutral_y], 'k', lw=2)
-
-        ax.plot(
-            [terminals[joined[0]][0], terminals[joined[-1]][0]],
-            [neutral_y, neutral_y],
-            'k', lw=2
-        )
-
-        ax.text(11, neutral_y, "N", fontsize=12, weight='bold')
-
-    # ---------------- DELTA ----------------
+    # DELTA CONNECTION
     else:
-        if is_hv or clock in [0, 6]:
-            pairs = [
-                (f"{prefix[0]}2", f"{prefix[1]}1"),
-                (f"{prefix[1]}2", f"{prefix[2]}1"),
-                (f"{prefix[2]}2", f"{prefix[0]}1"),
-            ]
+        # A2-B1
+        ax.plot([2,6],[1.8,5.2],'k',lw=2)
+        # B2-C1
+        ax.plot([6,10],[1.8,5.2],'k',lw=2)
+        # C2-A1
+        ax.plot([10,2],[1.8,5.2],'k',lw=2)
 
-        elif clock == 1:  # LV lag
-            pairs = [
-                (f"{prefix[0]}2", f"{prefix[2]}1"),
-                (f"{prefix[1]}2", f"{prefix[0]}1"),
-                (f"{prefix[2]}2", f"{prefix[1]}1"),
-            ]
-
-        elif clock == 11:  # LV lead
-            pairs = [
-                (f"{prefix[0]}2", f"{prefix[1]}1"),
-                (f"{prefix[1]}2", f"{prefix[0]}1"),
-                (f"{prefix[2]}2", f"{prefix[2]}1"),
-            ]
-
-        for start, end in pairs:
-            x1, y1 = terminals[start]
-            x2, y2 = terminals[end]
-            ax.plot([x1, x2], [y1, y2], 'k', lw=2)
-
-    ax.set_title(
-        f"{'HV' if is_hv else 'LV'} Actual Coil Connections ({conn_type})",
-        fontsize=14,
-        weight='bold'
-    )
-
+    ax.set_title(f"{'HV' if is_hv else 'LV'} Coil Connection ({conn_type})")
     ax.axis("off")
     return fig
 
-
-# ---------------- PHASOR ----------------
-def draw_phasor(clock):
-    fig, ax = plt.subplots(figsize=(5, 5), subplot_kw={'projection': 'polar'})
+# ---------------- PHASOR CLOCK ----------------
+def draw_phasor_clock(base_angles, labels, color, conn_type, title):
+    fig, ax = plt.subplots(figsize=(5,5), subplot_kw={'projection':'polar'})
     ax.set_theta_zero_location("N")
     ax.set_theta_direction(-1)
 
-    hv_angles = np.radians([0, 120, 240])
-    lv_angles = hv_angles + np.radians(clock * 30)
+    # Draw vectors
+    for ang, lab in zip(base_angles, labels):
+        ax.annotate("",
+                    xy=(ang,1),
+                    xytext=(0,0),
+                    arrowprops=dict(arrowstyle="->", lw=2, color=color))
+        ax.text(ang,1.15,lab,color=color,weight='bold')
 
-    for ang in hv_angles:
-        ax.arrow(ang, 0, 0, 1, color='red', lw=2)
+    # Draw delta triangle
+    if conn_type.upper() == "D":
+        closed_angles = np.append(base_angles, base_angles[0])
+        ax.plot(closed_angles,[1]*4,color=color,lw=2)
 
-    for ang in lv_angles:
-        ax.arrow(ang, 0, 0, 0.85, color='blue', lw=2)
-
-    ax.set_xticks(np.linspace(0, 2*np.pi, 12, endpoint=False))
-    ax.set_xticklabels(
-        ['12', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']
-    )
+    ax.set_xticks(np.linspace(0,2*np.pi,12,endpoint=False))
+    ax.set_xticklabels(['12','1','2','3','4','5','6','7','8','9','10','11'])
     ax.set_yticklabels([])
-    ax.set_title(f"Clock Position: {clock}")
+    ax.set_title(title)
     return fig
 
+# ---------------- ANGLE CALCULATION ----------------
+hv_angles = np.radians([0,120,240])
 
-# ---------------- UI ----------------
-st.header(f"Vector Group: {vector_group}")
+# Clock notation:
+# Positive clock means LV lags HV clockwise
+lv_angles = hv_angles + np.radians(clock*30)
+
+# ---------------- DISPLAY ----------------
+st.header(f"Vector Group: {vg_name}")
+st.write(f"**Phase Displacement:** {selected_grp['label']}")
 
 col1, col2 = st.columns(2)
 
 with col1:
-    st.pyplot(draw_actual_connections(hv_conn, True, clock))
+    st.pyplot(draw_coil_connections(hv_type, True))
+    st.pyplot(draw_phasor_clock(hv_angles,
+                                ["A","B","C"],
+                                "red",
+                                hv_type,
+                                "HV Reference"))
 
 with col2:
-    st.pyplot(draw_actual_connections(lv_conn, False, clock))
-
-st.pyplot(draw_phasor(clock))
+    st.pyplot(draw_coil_connections(lv_type, False))
+    st.pyplot(draw_phasor_clock(lv_angles,
+                                ["a","b","c"],
+                                "blue",
+                                lv_type,
+                                f"LV ({clock} o'clock)"))
 
 # ---------------- NOTES ----------------
-st.subheader("Active Connection Logic")
-st.write(f"Selected group: {group_name}")
-st.write(f"Clock number: {clock}")
-st.write("Only valid IEC/IITM vector groups shown.")
+st.divider()
+st.subheader("Technical Notes")
+st.markdown(f"""
+### Connection Summary:
+- **HV Side:** {hv_type}
+- **LV Side:** {lv_type}
+- **Clock Number:** {clock}
+
+### Parallel Operation:
+Only transformers in **{selected_grp_name}** can operate in parallel.
+
+### Delta Bridge Sequence:
+A2 → B1  
+B2 → C1  
+C2 → A1
+
+### Star Neutral:
+A2 + B2 + C2 connected together
+""")
