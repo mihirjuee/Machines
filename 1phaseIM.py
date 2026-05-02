@@ -48,7 +48,80 @@ push_start = st.sidebar.toggle("🌀 External Push Start", value=False)
 capacitor_mode = st.sidebar.toggle("⚡ Capacitor Start Mode", value=False)
 
 rotor_speed = st.sidebar.slider("Rotor Speed (for push mode)", 0.0, 1.0, 0.2)
+# ======================================================================
+# ADD THIS SECTION after SIDEBAR and before main layout
+# SINGLE-PHASE MOTOR CIRCUIT DIAGRAM
+# Shows:
+# ✅ Main winding
+# ✅ Auxiliary winding
+# ✅ Capacitor
+# ✅ Centrifugal switch
+# ======================================================================
 
+st.subheader("🔌 Single-Phase Induction Motor Circuit Diagram")
+
+fig_circuit, axc = plt.subplots(figsize=(10, 4))
+
+# Supply rails
+axc.plot([0, 0], [1, 5], linewidth=2)
+axc.plot([10, 10], [1, 5], linewidth=2)
+
+# Labels
+axc.text(-0.3, 5.2, "L")
+axc.text(10.1, 5.2, "N")
+
+# Main winding branch
+axc.plot([0, 2], [4, 4], linewidth=2)
+axc.plot([2, 3], [4.3, 3.7], linewidth=2)
+axc.plot([3, 4], [4.3, 3.7], linewidth=2)
+axc.plot([4, 5], [4.3, 3.7], linewidth=2)
+axc.plot([5, 6], [4.3, 3.7], linewidth=2)
+axc.plot([6, 10], [4, 4], linewidth=2)
+axc.text(3.5, 4.5, "Main Winding")
+
+# Auxiliary winding branch
+axc.plot([0, 2], [2, 2], linewidth=2)
+
+# Capacitor plates
+if capacitor_mode:
+    axc.plot([2.5, 2.5], [1.5, 2.5], linewidth=2)
+    axc.plot([3.0, 3.0], [1.5, 2.5], linewidth=2)
+    axc.text(2.3, 2.8, "C")
+else:
+    axc.plot([2, 3], [2, 2], linewidth=2)
+
+# Centrifugal switch
+axc.plot([3, 4], [2, 2], linewidth=2)
+
+if push_start:
+    # Switch closed
+    axc.plot([4, 5], [2, 2], linewidth=2)
+    axc.text(4.1, 2.3, "S (Closed)")
+else:
+    # Switch open
+    axc.plot([4, 4.7], [2, 2], linewidth=2)
+    axc.plot([4.7, 5], [2.2, 2], linewidth=2)
+    axc.text(4.1, 2.3, "S (Open)")
+
+# Auxiliary winding coil
+axc.plot([5, 6], [2.3, 1.7], linewidth=2)
+axc.plot([6, 7], [2.3, 1.7], linewidth=2)
+axc.plot([7, 8], [2.3, 1.7], linewidth=2)
+axc.plot([8, 10], [2, 2], linewidth=2)
+
+axc.text(6.2, 2.7, "Auxiliary Winding")
+
+# Rotor
+circle = plt.Circle((5, 3), 0.8, fill=False, linewidth=2)
+axc.add_patch(circle)
+axc.text(4.5, 3, "Rotor")
+
+# Layout
+axc.set_xlim(-1, 11)
+axc.set_ylim(0, 6)
+axc.axis("off")
+
+st.pyplot(fig_circuit)
 # ----------------------------------------------------------------------
 # CORE THEORY
 # ----------------------------------------------------------------------
