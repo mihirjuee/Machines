@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 st.set_page_config(page_title="Transformer Phasor Diagram", layout="wide")
 
 # Custom CSS for better aesthetics
+# Custom CSS for better aesthetics
 st.markdown("""
     <style>
     .main {
@@ -15,13 +16,7 @@ st.markdown("""
         padding-top: 10px;
     }
     </style>
-    """, unsafe_content_with_dropdown=True)
-
-st.title("⚡ Interactive Transformer Phasor Diagram")
-st.markdown("""
-This application visualizes the phasor relationships in a non-ideal transformer. 
-Adjust the parameters in the sidebar to see how load, power factor, and internal impedances affect the voltage and current vectors.
-""")
+    """, unsafe_allow_html=True) # <--- Fixed this line
 
 # ================= SIDEBAR PARAMETERS =================
 with st.sidebar:
