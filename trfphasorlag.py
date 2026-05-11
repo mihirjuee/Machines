@@ -4,84 +4,57 @@ import plotly.graph_objects as go
 
 # ================= PAGE =================
 st.set_page_config(page_title="Transformer Phasor Diagram", layout="wide")
-st.title("⚡ Transformer Phasor Diagram (Clear Vector Construction)")
+st.title("⚡ Transformer Phasor Diagram (Textbook Style)")
 
-# ================= CUSTOM CSS =================
-st.markdown("""
-<style>
-.main {
-    background-color: #eaf6ff;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# ================= INPUTS =================
+# ================= SIDEBAR =================
 with st.sidebar:
     st.header("🔧 Parameters")
 
-    V2 = st.slider("V₂ (pu)", 0.5, 1.5, 1.0)
-    I2 = st.slider("I₂ (pu)", 0.2, 1.5, 0.8)
+    V2 = st.slider("Secondary Voltage V₂ (pu)", 0.5, 1.5, 1.0)
+    I2 = st.slider("Secondary Current I₂ (pu)", 0.2, 1.5, 0.8)
     phi_deg = st.slider("Power Factor Angle φ (lagging)", 0, 70, 30)
 
-    R2 = st.slider("R₂", 0.0, 0.3, 0.1)
-    X2 = st.slider("X₂", 0.0, 0.5, 0.2)
+    R2 = st.slider("Secondary Resistance R₂", 0.0, 0.3, 0.1)
+    X2 = st.slider("Secondary Reactance X₂", 0.0, 0.5, 0.2)
 
-    a = st.slider("Turns Ratio a = N₁/N₂", 1.0, 3.0, 2.0)
-
-    Ic = st.slider("Ic", 0.0, 0.2, 0.05)
-    Im = st.slider("Im", 0.0, 0.3, 0.15)
-
-    step = st.slider("Construction Step", 1, 10, 10)
+    a = st.slider("Turns Ratio a = N₁/N₂", 1.0, 4.0, 2.0)
 
 # ================= CALCULATIONS =================
 phi = np.radians(phi_deg)
 
-# Reference vectors
+# Secondary side
 V2_vec = complex(V2, 0)
 I2_vec = I2 * np.exp(-1j * phi)
 
-# Voltage drops
 IR2 = I2_vec * R2
 IX2 = I2_vec * 1j * X2
 
-# Secondary induced emf
 E2_vec = V2_vec + IR2 + IX2
 
-# Primary induced emf
+# Primary side (different scale)
 E1_vec = a * E2_vec
-
-# Referred current
 I2_prime = I2_vec / a
 
-# No-load current
-I0_vec = complex(Ic, -Im)
-
-# Primary current
-I1_vec = I2_prime + I0_vec
-
-# Approximate primary voltage
-V1_vec = E1_vec
-
 # ================= DRAW FUNCTION =================
-def draw_arrow(fig, start, end, name, color):
+def draw_vector(fig, start, end, label, color, width=4, label_shift=18):
     # Main line
     fig.add_trace(go.Scatter(
         x=[start.real, end.real],
         y=[start.imag, end.imag],
-        mode='lines',
-        line=dict(color=color, width=5)
+        mode="lines",
+        line=dict(color=color, width=width)
     ))
 
-    # Arrowhead
+    # Arrow head
     fig.add_annotation(
-        ax=start.real,
-        ay=start.imag,
         x=end.real,
         y=end.imag,
+        ax=start.real,
+        ay=start.imag,
         showarrow=True,
-        arrowhead=4,
-        arrowsize=1.6,
-        arrowwidth=3,
+        arrowhead=3,
+        arrowsize=1.5,
+        arrowwidth=2.5,
         arrowcolor=color
     )
 
@@ -89,113 +62,121 @@ def draw_arrow(fig, start, end, name, color):
     fig.add_annotation(
         x=end.real,
         y=end.imag,
-        text=f"<b>{name}</b>",
+        text=f"<b>{label}</b>",
         showarrow=False,
-        font=dict(size=16, color=color),
+        font=dict(size=15, color=color),
         bgcolor="white",
-        bordercolor=color,
-        borderwidth=1,
-        yshift=18
+        yshift=label_shift
     )
 
-# ================= PLOT =================
+# ================= FIGURE =================
 fig = go.Figure()
 
-origin = 0 + 0j
+# ---------------- SECONDARY SIDE (LEFT) ----------------
+secondary_origin = complex(-3.5, 0)
 
-# -------- SECONDARY SIDE --------
-if step >= 1:
-    draw_arrow(fig, origin, V2_vec, "V₂", "black")
+draw_vector(fig, secondary_origin, secondary_origin + V2_vec, "V₂", "black")
+draw_vector(fig, secondary_origin, secondary_origin + I2_vec, "I₂", "blue")
 
-if step >= 2:
-    draw_arrow(fig, origin, I2_vec, "I₂", "blue")
+draw_vector(
+    fig,
+    secondary_origin + V2_vec,
+    secondary_origin + V2_vec + IR2,
+    "I₂R₂",
+    "green"
+)
 
-if step >= 3:
-    draw_arrow(fig, V2_vec, V2_vec + IR2, "I₂R₂", "green")
+draw_vector(
+    fig,
+    secondary_origin + V2_vec + IR2,
+    secondary_origin + E2_vec,
+    "jI₂X₂",
+    "orange"
+)
 
-if step >= 4:
-    draw_arrow(fig, V2_vec + IR2, E2_vec, "jI₂X₂", "orange")
+draw_vector(fig, secondary_origin, secondary_origin + E2_vec, "E₂", "purple", width=5)
 
-if step >= 5:
-    draw_arrow(fig, origin, E2_vec, "E₂", "purple")
+# ---------------- PRIMARY SIDE (RIGHT) ----------------
+primary_origin = complex(3.5, 0)
 
-# -------- PRIMARY SIDE --------
-if step >= 6:
-    draw_arrow(fig, origin, E1_vec, "E₁", "red")
+draw_vector(fig, primary_origin, primary_origin + E1_vec, "E₁", "red", width=5)
+draw_vector(fig, primary_origin, primary_origin + I2_prime, "I₂′", "brown")
 
-if step >= 7:
-    draw_arrow(fig, origin, I2_prime, "I₂′", "brown")
+# ---------------- DIVIDER LINE ----------------
+fig.add_shape(
+    type="line",
+    x0=0,
+    y0=-4,
+    x1=0,
+    y1=4,
+    line=dict(color="gray", dash="dash", width=3)
+)
 
-if step >= 8:
-    draw_arrow(fig, origin, I0_vec, "I₀", "magenta")
+# ---------------- LABELS ----------------
+fig.add_annotation(
+    x=-3.5,
+    y=3.8,
+    text="<b>SECONDARY SIDE</b>",
+    showarrow=False,
+    font=dict(size=18, color="black")
+)
 
-if step >= 9:
-    draw_arrow(fig, origin, I1_vec, "I₁", "darkblue")
+fig.add_annotation(
+    x=3.5,
+    y=3.8,
+    text="<b>PRIMARY SIDE</b>",
+    showarrow=False,
+    font=dict(size=18, color="black")
+)
 
-if step >= 10:
-    draw_arrow(fig, origin, V1_vec, "V₁", "black")
-
-# Origin
-fig.add_trace(go.Scatter(
-    x=[0],
-    y=[0],
-    mode='markers',
-    marker=dict(size=10, color='black')
-))
-
-# ================= STYLE =================
+# ================= AXES =================
 fig.update_layout(
     template="plotly_white",
     xaxis=dict(
         title="Real Axis",
-        range=[-4, 4],
+        range=[-8, 8],
         zeroline=True,
-        zerolinewidth=3,
-        zerolinecolor='black',
+        zerolinewidth=2,
+        zerolinecolor="black",
         showgrid=True,
-        gridcolor='lightgray'
+        gridcolor="lightgray"
     ),
     yaxis=dict(
         title="Imaginary Axis",
         range=[-4, 4],
         zeroline=True,
-        zerolinewidth=3,
-        zerolinecolor='black',
+        zerolinewidth=2,
+        zerolinecolor="black",
         showgrid=True,
-        gridcolor='lightgray',
+        gridcolor="lightgray",
         scaleanchor="x"
     ),
-    height=700,
+    height=750,
     showlegend=False
 )
 
+# ================= DISPLAY =================
 st.plotly_chart(fig, use_container_width=True)
 
-# ================= FORMULAS =================
-st.subheader("📘 Key Equations")
+# ================= THEORY =================
+st.subheader("📘 Textbook Construction Steps")
+st.markdown("""
+**Secondary Side:**  
+1. Draw V₂ as reference  
+2. Draw I₂ lagging by φ  
+3. Add I₂R₂ in phase with I₂  
+4. Add jI₂X₂ perpendicular to I₂  
+5. Result gives E₂  
+
+**Primary Side:**  
+6. E₁ = aE₂ (scaled by turns ratio)  
+7. I₂′ = I₂/a  
+""")
+
 st.latex(r"E_2 = V_2 + I_2R_2 + jI_2X_2")
 st.latex(r"E_1 = aE_2")
-st.latex(r"I_1 = I_2' + I_0")
-
-# ================= STEP EXPLANATION =================
-st.subheader("🧠 Step Explanation")
-
-steps = {
-    1: "V₂ is taken as the reference phasor.",
-    2: "I₂ lags V₂ by power factor angle φ.",
-    3: "Voltage drop I₂R₂ is added in phase with I₂.",
-    4: "Reactive drop jI₂X₂ is added 90° ahead of I₂.",
-    5: "E₂ is obtained by vector sum.",
-    6: "E₁ = aE₂ (referred to primary side).",
-    7: "I₂′ is secondary current referred to primary.",
-    8: "I₀ consists of Ic and Im.",
-    9: "I₁ = I₂′ + I₀.",
-    10: "V₁ ≈ E₁ for ideal transformer."
-}
-
-st.info(steps[step])
 
 # ================= FOOTER =================
 st.markdown("---")
-st.markdown("### 🎓 Designed for Electrical Engineering Visualization")
-st.markdown("Understand • Construct • Visualize ⚡")
+st.markdown("### 🎓 Textbook Style Transformer Phasor Diagram")
+st.markdown("Primary and Secondary shown separately for clear conceptual understanding ⚡")
