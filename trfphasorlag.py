@@ -23,8 +23,65 @@ This simulator constructs the **complete transformer phasor diagram** step-by-st
 """)
 
 # ================= SESSION =================
+# ================= SESSION =================
 if "step_index" not in st.session_state:
     st.session_state.step_index = 1
+
+# ================= STEP CONTROLS =================
+st.subheader("📍 Step-by-Step Construction Control")
+
+col1, col2, col3 = st.columns([1, 2, 1])
+
+# ---- PREVIOUS BUTTON ----
+with col1:
+    if st.button("➖ Previous", use_container_width=True):
+        if st.session_state.step_index > 1:
+            st.session_state.step_index -= 1
+
+# ---- CURRENT STEP DISPLAY ----
+with col2:
+    st.markdown(
+        f"""
+        <div style='text-align:center;
+                    padding:12px;
+                    background-color:#e0f2fe;
+                    border-radius:12px;
+                    font-size:24px;
+                    font-weight:bold;
+                    color:#0f172a;'>
+            Step {st.session_state.step_index} / 11
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+# ---- NEXT BUTTON ----
+with col3:
+    if st.button("➕ Next", use_container_width=True):
+        if st.session_state.step_index < 11:
+            st.session_state.step_index += 1
+
+# ================= OPTIONAL AUTO PLAY =================
+st.markdown("### ▶️ Auto Simulation")
+
+play_col1, play_col2 = st.columns(2)
+
+with play_col1:
+    play_clicked = st.button("▶️ Play All Steps", use_container_width=True)
+
+with play_col2:
+    if st.button("🔄 Reset", use_container_width=True):
+        st.session_state.step_index = 1
+
+# ================= PLAYBACK =================
+if play_clicked:
+    for i in range(st.session_state.step_index, 12):
+        st.session_state.step_index = i
+        time.sleep(0.8)
+        st.rerun()
+
+# ================= CURRENT STEP =================
+curr_step = st.session_state.step_index
 
 # ================= SIDEBAR =================
 with st.sidebar:
