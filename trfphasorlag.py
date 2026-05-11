@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 import time
 
 # ================= PAGE CONFIG =================
-st.set_page_config(page_title="Transformer Phasor Lab", layout="wide")
+st.set_page_config(page_title="Transformer Phasor Lab", page_icon="logo.png", layout="wide")
 
 # ================= CUSTOM CSS =================
 st.markdown("""
@@ -16,7 +16,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ================= TITLE =================
-st.title("⚡ Transformer Phasor Lab: Textbook Style Step-by-Step")
+st.title("⚡ Transformer Phasor Lab")
 st.markdown("""
 This simulator constructs the **complete transformer phasor diagram** step-by-step exactly like textbook vector addition.  
 **Primary phasors are on the LEFT**, **Secondary phasors on the RIGHT**, with **Flux Vector Φ** included for conceptual clarity.
