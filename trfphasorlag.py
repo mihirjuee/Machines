@@ -22,7 +22,7 @@ This simulator constructs the **complete transformer phasor diagram** step-by-st
 **Primary phasors are on the LEFT**, **Secondary phasors on the RIGHT**, with **Flux Vector Φ** included for conceptual clarity.
 """)
 
-# ================= SESSION =================
+
 # ================= SESSION =================
 if "step_index" not in st.session_state:
     st.session_state.step_index = 1
@@ -73,12 +73,7 @@ with play_col2:
     if st.button("🔄 Reset", use_container_width=True):
         st.session_state.step_index = 1
 
-# ================= PLAYBACK =================
-if play_clicked:
-    for i in range(st.session_state.step_index, 12):
-        st.session_state.step_index = i
-        time.sleep(0.8)
-        st.rerun()
+
 
 # ================= CURRENT STEP =================
 curr_step = st.session_state.step_index
