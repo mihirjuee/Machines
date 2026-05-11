@@ -68,10 +68,7 @@ curr_step = st.session_state.step_index
 with st.sidebar:
     st.header("⚙️ Configuration")
 
-    play_clicked = st.button("▶️ Play Simulation")
 
-    if st.button("🔄 Reset"):
-        st.session_state.step_index = 1
 
     st.divider()
 
