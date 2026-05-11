@@ -4,146 +4,248 @@ import plotly.graph_objects as go
 import time
 
 # ================= PAGE CONFIG =================
-st.set_page_config(page_title="Transformer Simulation Lab", layout="wide")
+st.set_page_config(page_title="Transformer Phasor Lab", layout="wide")
 
-# Initialize Session State for Steps
+# ================= CUSTOM CSS =================
+st.markdown("""
+<style>
+.main {
+    background-color: #f8fbff;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ================= TITLE =================
+st.title("⚡ Transformer Phasor Lab: Textbook Style Step-by-Step")
+st.markdown("""
+This simulator constructs the **complete transformer phasor diagram** exactly like textbook vector addition.  
+**Primary phasors are drawn on the LEFT** and **Secondary phasors on the RIGHT** for visual clarity.
+""")
+
+# ================= SESSION =================
 if "step_index" not in st.session_state:
     st.session_state.step_index = 1
 
-st.title("⚡ Transformer Phasor Lab")
-st.markdown("Build the diagram vector-by-vector to understand how internal impedances affect the relationship between $V_1$ and $V_2$.")
-
-# ================= SIDEBAR: PARAMETERS =================
+# ================= SIDEBAR =================
 with st.sidebar:
-    st.header("🎮 Controls")
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        if st.button("▶️ Play"):
-            play_active = True
-        else:
-            play_active = False
-    with col2:
-        if st.button("⏭️ Next"):
-            if st.session_state.step_index < 10:
-                st.session_state.step_index += 1
-    with col3:
-        if st.button("🔄 Reset"):
-            st.session_state.step_index = 1
+    st.header("⚙️ Configuration")
+
+    play_clicked = st.button("▶️ Play Simulation")
+
+    if st.button("🔄 Reset"):
+        st.session_state.step_index = 1
 
     st.divider()
-    
-    st.header("🏗️ Transformer Design")
-    a = st.slider("Turns Ratio (a = N1/N2)", 0.5, 4.0, 2.0)
-    
-    with st.expander("Secondary Side (Load)", expanded=True):
-        i2_mag = st.slider("Load Current (I₂)", 0.1, 1.5, 0.8)
-        pf_angle = st.slider("PF Angle (°)", -90, 90, 30)
-        r2 = st.slider("Resistance R₂", 0.0, 0.3, 0.05)
-        x2 = st.slider("Reactance X₂", 0.0, 0.5, 0.15)
 
-    with st.expander("Primary Side & Core"):
-        r1 = st.slider("Resistance R₁", 0.0, 0.3, 0.05)
-        x1 = st.slider("Reactance X₁", 0.0, 0.5, 0.15)
-        ic = st.slider("Core Loss (Ic)", 0.0, 0.2, 0.04)
-        im = st.slider("Magnetizing (Im)", 0.0, 0.4, 0.15)
+    a = st.slider("Turns Ratio (a = N₁/N₂)", 0.5, 3.0, 2.0)
+    pf_angle = st.slider("Secondary PF Angle θ₂ (°)", -60, 60, 30)
+    i2_mag = st.slider("Load Current I₂", 0.2, 1.2, 0.8)
+
+    st.subheader("Internal Parameters")
+    r1 = st.slider("R₁", 0.0, 0.3, 0.10)
+    x1 = st.slider("X₁", 0.0, 0.5, 0.25)
+
+    r2 = st.slider("R₂", 0.0, 0.3, 0.06)
+    x2 = st.slider("X₂", 0.0, 0.5, 0.12)
+
+    ic = st.slider("Ic", 0.0, 0.2, 0.05)
+    im = st.slider("Im", 0.0, 0.3, 0.18)
 
 # ================= CALCULATIONS =================
 theta2 = np.radians(pf_angle)
 origin = 0 + 0j
 
-# Secondary Vectors
+# ---------- SECONDARY ----------
 V2 = 1.0 + 0j
 I2 = i2_mag * (np.cos(theta2) - 1j * np.sin(theta2))
-V2_drop_r = I2 * r2
-V2_drop_x = I2 * 1j * x2
-E2 = V2 + V2_drop_r + V2_drop_x
 
-# Primary Vectors (Phasor-flipped 180 degrees)
-minus_E1 = -(a * E2)
-minus_I2_prime = -(I2 / a)
+I2R2 = I2 * r2
+jI2X2 = I2 * 1j * x2
 
-# Core components relative to -E1
-if np.abs(minus_E1) > 0:
-    E1_unit = minus_E1 / np.abs(minus_E1)
-    Ic_vec = ic * E1_unit
-    Im_vec = im * (E1_unit * -1j)
-else:
-    Ic_vec, Im_vec = 0j, 0j
+E2 = V2 + I2R2 + jI2X2
+
+# ---------- PRIMARY ----------
+E1 = -a * E2   # Opposite direction (Lenz's law)
+I2_prime = -(I2 / a)
+
+# Excitation current aligned with E1
+E1_unit = E1 / np.abs(E1)
+Ic_vec = ic * E1_unit
+Im_vec = im * (E1_unit * -1j)
 
 I0 = Ic_vec + Im_vec
-I1 = minus_I2_prime + I0
+I1 = I2_prime + I0
 
-# Primary Terminal Voltage
-V1_drop_r = I1 * r1
-V1_drop_x = I1 * 1j * x1
-minus_V1 = minus_E1 + V1_drop_r + V1_drop_x
+I1R1 = I1 * r1
+jI1X1 = I1 * 1j * x1
 
-# ================= PLAYBACK LOGIC =================
-if play_active:
+V1 = E1 + I1R1 + jI1X1
+
+# ================= STEPS =================
+steps = [
+    "Draw secondary terminal voltage V₂ as reference.",
+    "Draw secondary current I₂ at angle θ₂.",
+    "Add I₂R₂ in phase with I₂.",
+    "Add jI₂X₂ perpendicular to I₂.",
+    "Resultant gives secondary induced EMF E₂.",
+    "Reflect E₂ to primary as −E₁.",
+    "Draw referred current I₂′.",
+    "Add excitation current I₀.",
+    "Vector sum gives primary current I₁.",
+    "Add I₁R₁ and jI₁X₁ to obtain V₁."
+]
+
+# ================= PLAYBACK =================
+if play_clicked:
     for i in range(st.session_state.step_index, 11):
         st.session_state.step_index = i
-        time.sleep(0.5)
+        time.sleep(0.8)
         st.rerun()
 
-curr_step = st.session_state.step_index
+curr_step = st.select_slider(
+    "📍 Current Construction Step",
+    options=list(range(1, 11)),
+    value=st.session_state.step_index
+)
 
-# ================= VISUALIZATION =================
-def add_vector(fig, start, end, label, color, width=3, dash=None):
+st.session_state.step_index = curr_step
+
+# ================= DRAW FUNCTION =================
+def draw_vector(fig, start, end, label, color, width=4, dash=None, shiftx=0, shifty=0):
     fig.add_trace(go.Scatter(
-        x=[start.real, end.real], y=[start.imag, end.imag],
-        mode="lines", line=dict(color=color, width=width, dash=dash),
-        name=label, hovertext=f"{label}: {np.abs(end-start):.2f}"
+        x=[start.real, end.real],
+        y=[start.imag, end.imag],
+        mode="lines",
+        line=dict(color=color, width=width, dash=dash),
+        hoverinfo="skip"
     ))
+
     fig.add_annotation(
-        x=end.real, y=end.imag, ax=start.real, ay=start.imag,
-        xref="x", yref="y", axref="x", ayref="y",
-        showarrow=True, arrowhead=2, arrowsize=1, arrowwidth=width, arrowcolor=color
+        x=end.real,
+        y=end.imag,
+        ax=start.real,
+        ay=start.imag,
+        xref="x",
+        yref="y",
+        axref="x",
+        ayref="y",
+        showarrow=True,
+        arrowhead=3,
+        arrowsize=1.3,
+        arrowwidth=2.2,
+        arrowcolor=color
     )
 
+    fig.add_annotation(
+        x=end.real + shiftx,
+        y=end.imag + shifty,
+        text=f"<b>{label}</b>",
+        showarrow=False,
+        font=dict(size=16, color=color)
+    )
+
+# ================= FIGURE =================
 fig = go.Figure()
 
-# Logical progression of the Diagram
-if curr_step >= 1: add_vector(fig, origin, V2, "V₂", "#10b981", 5)
-if curr_step >= 2: add_vector(fig, origin, I2, "I₂", "#f59e0b", 2)
-if curr_step >= 3: add_vector(fig, V2, V2 + V2_drop_r, "I₂R₂", "#86efac")
-if curr_step >= 4: add_vector(fig, V2 + V2_drop_r, E2, "jI₂X₂", "#22c55e")
-if curr_step >= 5: add_vector(fig, origin, E2, "E₂", "#15803d", 4)
-if curr_step >= 6: add_vector(fig, origin, minus_E1, "-E₁", "#3b82f6", 4)
-if curr_step >= 7: add_vector(fig, origin, minus_I2_prime, "I₂'", "#fbbf24", 2, "dash")
-if curr_step >= 8: add_vector(fig, origin, I0, "I₀", "#94a3b8")
-if curr_step >= 9: add_vector(fig, origin, I1, "I₁", "#7c3aed", 4)
-if curr_step >= 10:
-    add_vector(fig, minus_E1, minus_E1 + V1_drop_r, "I₁R₁", "#f87171")
-    add_vector(fig, minus_E1 + V1_drop_r, minus_V1, "jI₁X₁", "#dc2626")
-    add_vector(fig, origin, minus_V1, "V₁", "#1e3a8a", 5)
+# ----- SECONDARY SIDE (RIGHT) -----
+if curr_step >= 1:
+    draw_vector(fig, origin, V2, "V₂", "blue", width=5, shifty=-0.12)
 
-# Axis Scaling
-limit = max(np.abs(minus_V1), np.abs(V2), a) + 0.5
+if curr_step >= 2:
+    draw_vector(fig, origin, I2, "I₂", "green", width=3)
+
+if curr_step >= 3:
+    draw_vector(fig, V2, V2 + I2R2, "I₂R₂", "#84cc16", width=3)
+
+if curr_step >= 4:
+    draw_vector(fig, V2 + I2R2, E2, "jI₂X₂", "#16a34a", width=3)
+
+if curr_step >= 5:
+    draw_vector(fig, origin, E2, "E₂", "#22c55e", width=5, shifty=0.15)
+
+# ----- PRIMARY SIDE (LEFT) -----
+if curr_step >= 6:
+    draw_vector(fig, origin, E1, "−E₁", "purple", width=5, shifty=0.15)
+
+if curr_step >= 7:
+    draw_vector(fig, origin, I2_prime, "I₂′", "orange", width=3, dash="dash")
+
+if curr_step >= 8:
+    draw_vector(fig, origin, I0, "I₀", "gray", width=3)
+
+if curr_step >= 9:
+    draw_vector(fig, origin, I1, "I₁", "red", width=4)
+
+if curr_step >= 10:
+    draw_vector(fig, E1, E1 + I1R1, "I₁R₁", "#f97316", width=3)
+    draw_vector(fig, E1 + I1R1, V1, "jI₁X₁", "#dc2626", width=3)
+    draw_vector(fig, origin, V1, "V₁", "darkblue", width=5, shifty=0.15)
+
+# ================= ANGLES =================
+theta_arc = np.linspace(-theta2, 0, 40)
+fig.add_trace(go.Scatter(
+    x=0.5 * np.cos(theta_arc),
+    y=0.5 * np.sin(theta_arc),
+    mode="lines",
+    line=dict(color="gray", dash="dot")
+))
+fig.add_annotation(x=0.4, y=-0.12, text="θ₂", showarrow=False)
+
+# ================= LABELS =================
+fig.add_annotation(x=-2.2, y=1.8, text="<b>PRIMARY SIDE</b>", showarrow=False, font=dict(size=18))
+fig.add_annotation(x=2.2, y=1.8, text="<b>SECONDARY SIDE</b>", showarrow=False, font=dict(size=18))
+
+# ================= STYLE =================
+limit = max(abs(V1.real), abs(E1.real), abs(E2.real), 2.5) + 1.2
+
 fig.update_layout(
-    height=700,
-    xaxis=dict(range=[-limit, limit], zeroline=True, zerolinecolor="black"),
-    yaxis=dict(range=[-limit/1.5, limit/1.5], scaleanchor="x", scaleratio=1, zeroline=True, zerolinecolor="black"),
-    margin=dict(t=0, b=0), plot_bgcolor="white"
+    height=800,
+    xaxis=dict(
+        range=[-limit, limit],
+        zeroline=True,
+        zerolinewidth=2,
+        zerolinecolor="black",
+        showgrid=True,
+        gridcolor="#e5e7eb"
+    ),
+    yaxis=dict(
+        range=[-limit / 1.6, limit / 1.6],
+        zeroline=True,
+        zerolinewidth=2,
+        zerolinecolor="black",
+        showgrid=True,
+        gridcolor="#e5e7eb",
+        scaleanchor="x"
+    ),
+    showlegend=False,
+    plot_bgcolor="white",
+    paper_bgcolor="white"
 )
 
 st.plotly_chart(fig, use_container_width=True)
 
-# ================= STATUS MESSAGES =================
-step_descriptions = [
-    "**Step 1:** Establish $V_2$ as our reference on the real axis.",
-    "**Step 2:** Plot $I_2$ lagging $V_2$ by the load phase angle.",
-    "**Step 3:** Add the secondary resistance drop $I_2R_2$ (parallel to $I_2$).",
-    "**Step 4:** Add the secondary reactance drop $jI_2X_2$ (90° ahead of $I_2$).",
-    "**Step 5:** Complete the secondary triangle to find the induced EMF $E_2$.",
-    "**Step 6:** Reflect the EMF to the primary side as $-E_1$ (Scaled by $a$).",
-    "**Step 7:** Draw the referred load current $I_2'$ on the primary side.",
-    "**Step 8:** Introduce the no-load excitation current $I_0$ (Magnetizing + Core loss).",
-    "**Step 9:** Combine $I_2'$ and $I_0$ to find the total primary current $I_1$.",
-    "**Step 10:** Add primary impedance drops to $-E_1$ to find the source voltage $V_1$."
-]
+# ================= STEP INFO =================
+st.success(f"### Step {curr_step}: {steps[curr_step - 1]}")
 
-st.info(step_descriptions[curr_step-1])
+# ================= THEORY =================
+st.divider()
 
-# Progress Bar
-st.progress(curr_step / 10)
+col1, col2 = st.columns(2)
+
+with col1:
+    st.markdown("### 📘 Key Equations")
+    st.latex(r"E_2 = V_2 + I_2R_2 + jI_2X_2")
+    st.latex(r"E_1 = -aE_2")
+    st.latex(r"I_1 = I_2' + I_0")
+    st.latex(r"V_1 = E_1 + I_1R_1 + jI_1X_1")
+
+with col2:
+    st.markdown("### 📊 Performance")
+    regulation = ((np.abs(V1) / a - np.abs(V2)) / np.abs(V2)) * 100
+    st.metric("Voltage Regulation", f"{regulation:.2f}%")
+    st.metric("Primary PF Angle θ₁", f"{np.degrees(np.angle(I1)):.2f}°")
+
+# ================= FOOTER =================
+st.markdown("---")
+st.markdown("### 🎓 Transformer Phasor Lab")
+st.markdown("Textbook Construction • Stepwise Learning • Visual Clarity ⚡")
