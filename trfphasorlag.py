@@ -1,152 +1,189 @@
 import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
-import time
 
-# ================= PAGE CONFIG =================
-st.set_page_config(page_title="Transformer Phasor Lab", layout="wide")
-
-st.title("⚡ Transformer Phasor Lab: Step-by-Step")
-st.markdown("""
-This simulation builds the transformer phasor diagram vector-by-vector. 
-In this view, **Primary vectors are shown on the left** and **Secondary vectors on the right** for maximum clarity.
-""")
+# ================= PAGE =================
+st.set_page_config(page_title="Transformer Phasor Diagram", layout="wide")
+st.title("⚡ The Phasor Diagram of the Transformer")
 
 # ================= SIDEBAR =================
 with st.sidebar:
-    st.header("⚙️ Configuration")
-    
-    # Playback Controls
-    if "step_index" not in st.session_state:
-        st.session_state.step_index = 1
-        
-    play_clicked = st.button("▶️ Play Simulation")
-    if st.button("Reset"):
-        st.session_state.step_index = 1
+    st.header("🔧 Parameters")
 
-    st.divider()
-    
-    # Electrical Parameters
-    a = st.slider("Turns Ratio (a)", 0.5, 3.0, 2.0)
-    pf_angle = st.slider("Secondary PF Angle (°)", -60, 60, 30)
-    i2_mag = st.slider("Load Current (I₂)", 0.2, 1.2, 0.8)
-    
-    with st.expander("Internal Impedances"):
-        r1, x1 = 0.1, 0.25
-        r2, x2 = 0.06, 0.12
-        ic, im = 0.05, 0.18
+    V2_mag = st.slider("V₂ Magnitude", 0.5, 1.5, 1.0)
+    I2_mag = st.slider("I₂ Magnitude", 0.2, 1.5, 0.8)
+
+    theta2_deg = st.slider("Secondary PF Angle θ₂", 0, 70, 30)
+
+    R1 = st.slider("R₁", 0.0, 0.3, 0.1)
+    X1 = st.slider("X₁", 0.0, 0.5, 0.2)
+
+    R2 = st.slider("R₂", 0.0, 0.3, 0.1)
+    X2 = st.slider("X₂", 0.0, 0.5, 0.2)
+
+    Ic = st.slider("Ic", 0.0, 0.3, 0.08)
+    Im = st.slider("Im", 0.0, 0.4, 0.18)
+
+    a = st.slider("Turns Ratio a=N₁/N₂", 1.0, 4.0, 2.0)
 
 # ================= CALCULATIONS =================
-theta2 = np.radians(pf_angle)
+theta2 = np.radians(theta2_deg)
+
 origin = 0 + 0j
 
-# Secondary Side
-V2 = 1.0 + 0j
-I2 = i2_mag * (np.cos(theta2) - 1j * np.sin(theta2))
-V2_drop_r = I2 * r2
-V2_drop_x = I2 * 1j * x2
-E2 = V2 + V2_drop_r + V2_drop_x
+# Secondary voltage reference
+V2 = V2_mag + 0j
 
-# Primary Side (180 degree shift)
-E1_val = a * E2
-minus_E1 = -E1_val 
+# Secondary current lags
+I2 = I2_mag * np.exp(-1j * theta2)
 
-# Currents
-minus_I2_prime = -(I2 / a)
-# Excitation aligned with -E1
-E1_unit = minus_E1 / np.abs(minus_E1)
-Ic_vec = ic * E1_unit
-Im_vec = im * (E1_unit * -1j)
+# Secondary drops
+I2R2 = I2 * R2
+jI2X2 = I2 * 1j * X2
+
+# Secondary induced emf
+E2 = V2 + I2R2 + jI2X2
+
+# Primary emf
+E1 = a * E2
+
+# Referred current
+I2_prime = I2 / a
+
+# Exciting current
+Ic_vec = Ic + 0j
+Im_vec = -1j * Im
 Iphi = Ic_vec + Im_vec
-I1 = minus_I2_prime + Iphi
 
-# Primary Voltage
-V1_drop_r = I1 * r1
-V1_drop_x = I1 * 1j * x1
-minus_V1 = minus_E1 + V1_drop_r + V1_drop_x
+# Primary current
+I1 = I2_prime + Iphi
 
-# ================= STEP DEFINITIONS =================
-steps = [
-    {"label": "1. Reference Voltage", "desc": "Start with Secondary Terminal Voltage $V_2$ at 0°."},
-    {"label": "2. Load Current", "desc": "Draw $I_2$ lagging $V_2$ by the Power Factor angle $\\theta_2$."},
-    {"label": "3. Secondary Resistance", "desc": "Add the resistive drop $I_2R_2$ in phase with $I_2$."},
-    {"label": "4. Secondary Reactance", "desc": "Add the inductive drop $jI_2X_2$ perpendicular to $I_2$."},
-    {"label": "5. Secondary EMF", "desc": "The resultant is $E_2$, the voltage induced in the secondary winding."},
-    {"label": "6. Primary Induced EMF", "desc": "Reflect $E_2$ to the primary as $-E_1$ (mirrored and scaled by $a$)."},
-    {"label": "7. Referred Current", "desc": "Draw $I_2'$ (primary current needed to balance the load MMF)."},
-    {"label": "8. No-Load Current", "desc": "Add $I_0$ (Excitation current) to account for core losses and magnetization."},
-    {"label": "9. Total Primary Current", "desc": "Vector sum: $I_1 = I_2' + I_0$."},
-    {"label": "10. Primary Source", "desc": "Add primary drops to find the total source voltage $V_1$."}
-]
+# Primary drops
+I1R1 = I1 * R1
+jI1X1 = I1 * 1j * X1
 
-# Playback Logic
-if play_clicked:
-    for i in range(st.session_state.step_index, 11):
-        st.session_state.step_index = i
-        time.sleep(0.8)
-        st.rerun()
+# Primary voltage
+V1 = E1 + I1R1 + jI1X1
 
-# Step Slider
-curr_step = st.select_slider("Current Step", options=range(1, 11), value=st.session_state.step_index)
-st.session_state.step_index = curr_step
-
-# ================= DRAWING =================
-def draw(fig, start, end, label, color, width=3, dash=None):
+# ================= DRAW FUNCTION =================
+def draw_arrow(fig, start, end, label, color, width=4, size=16, shiftx=0, shifty=0):
     fig.add_trace(go.Scatter(
-        x=[start.real, end.real], y=[start.imag, end.imag],
-        mode="lines", line=dict(color=color, width=width, dash=dash),
-        name=label, hoverinfo='skip'
+        x=[start.real, end.real],
+        y=[start.imag, end.imag],
+        mode="lines",
+        line=dict(color=color, width=width)
     ))
+
     fig.add_annotation(
-        x=end.real, y=end.imag, ax=start.real, ay=start.imag,
-        xref="x", yref="y", axref="x", ayref="y",
-        showarrow=True, arrowhead=2, arrowsize=1, arrowwidth=width, arrowcolor=color
+        x=end.real,
+        y=end.imag,
+        ax=start.real,
+        ay=start.imag,
+        showarrow=True,
+        arrowhead=3,
+        arrowsize=1.4,
+        arrowwidth=2.5,
+        arrowcolor=color
     )
 
+    fig.add_annotation(
+        x=end.real + shiftx,
+        y=end.imag + shifty,
+        text=f"<b>{label}</b>",
+        showarrow=False,
+        font=dict(size=size, color=color)
+    )
+
+# ================= FIGURE =================
 fig = go.Figure()
 
-# Plot based on current step
-if curr_step >= 1: draw(fig, origin, V2, "V₂", "green", 5)
-if curr_step >= 2: draw(fig, origin, I2, "I₂", "orange", 2)
-if curr_step >= 3: draw(fig, V2, V2 + V2_drop_r, "I₂R₂", "#4ade80")
-if curr_step >= 4: draw(fig, V2 + V2_drop_r, E2, "jI₂X₂", "#22c55e")
-if curr_step >= 5: draw(fig, origin, E2, "E₂", "#15803d", 4)
-if curr_step >= 6: draw(fig, origin, minus_E1, "-E₁", "blue", 4)
-if curr_step >= 7: draw(fig, origin, minus_I2_prime, "I₂'", "orange", 2, "dash")
-if curr_step >= 8: draw(fig, origin, Iphi, "I₀", "gray")
-if curr_step >= 9: draw(fig, origin, I1, "I₁", "purple", 4)
-if curr_step >= 10:
-    draw(fig, minus_E1, minus_E1 + V1_drop_r, "I₁R₁", "#f87171")
-    draw(fig, minus_E1 + V1_drop_r, minus_V1, "jI₁X₁", "#dc2626")
-    draw(fig, origin, minus_V1, "V₁", "darkblue", 5)
+# -------- CURRENT TRIANGLE (BOTTOM LEFT) --------
+draw_arrow(fig, origin, Ic_vec, "Ic", "#f59e0b", shiftx=0.1)
+draw_arrow(fig, origin, Im_vec, "Im", "#eab308", shiftx=-0.2)
+draw_arrow(fig, origin, Iphi, "Iϕ", "#fbbf24", shiftx=0.1)
+draw_arrow(fig, origin, I2, "I₂", "#16a34a", shiftx=0.1)
+draw_arrow(fig, origin, I1, "I₁", "#ef4444", shiftx=0.1)
+draw_arrow(fig, origin, I2_prime, "Ip", "#15803d", shiftx=0.1)
 
-# Axis Styling
-limit = max(a + 0.5, 2.5)
+# -------- SECONDARY PHASOR CONSTRUCTION --------
+secondary_origin = complex(0, 0)
+
+draw_arrow(fig, secondary_origin, V2, "V₂", "#2563eb", width=5, shifty=-0.25)
+
+draw_arrow(fig, V2, V2 + I2R2, "I₂R₂", "#65a30d", shiftx=0.1)
+
+draw_arrow(fig, V2 + I2R2, E2, "jI₂X₂", "#16a34a", shiftx=0.1)
+
+draw_arrow(fig, secondary_origin, E2, "E₂", "#4ade80", width=5, shifty=0.2)
+
+# -------- PRIMARY PHASOR CONSTRUCTION --------
+draw_arrow(fig, secondary_origin, E1, "E₁", "#1d4ed8", width=5, shifty=0.25)
+
+draw_arrow(fig, E1, E1 + I1R1, "I₁R₁", "#ef4444", shiftx=0.1)
+
+draw_arrow(fig, E1 + I1R1, V1, "jI₁X₁", "#dc2626", shiftx=0.1)
+
+draw_arrow(fig, secondary_origin, V1, "V₁", "#2563eb", width=6, shifty=0.3)
+
+# ================= ANGLES =================
+theta_arc = np.linspace(-theta2, 0, 40)
+fig.add_trace(go.Scatter(
+    x=0.8 * np.cos(theta_arc),
+    y=0.8 * np.sin(theta_arc),
+    mode="lines",
+    line=dict(color="gray", dash="dot")
+))
+fig.add_annotation(x=0.65, y=-0.2, text="θ₂", showarrow=False)
+
+theta1 = np.angle(I1)
+theta1_arc = np.linspace(theta1, 0, 40)
+fig.add_trace(go.Scatter(
+    x=1.0 * np.cos(theta1_arc),
+    y=1.0 * np.sin(theta1_arc),
+    mode="lines",
+    line=dict(color="gray", dash="dot")
+))
+fig.add_annotation(x=0.85, y=0.25, text="θ₁", showarrow=False)
+
+# ================= EQUATION BOX =================
+st.markdown("### 📘 Key Equations")
+st.latex(r"\frac{E_1}{E_2} = \frac{I_2}{I_p} = \frac{N_1}{N_2} = a")
+st.latex(r"V_1 = E_1 + I_1(R_1 + jX_1)")
+st.latex(r"V_2 = E_2 - I_2(R_2 + jX_2)")
+
+# ================= STYLE =================
 fig.update_layout(
-    height=750, margin=dict(t=0, b=0),
-    xaxis=dict(range=[-limit, limit], zeroline=True, zerolinecolor="black", gridcolor="#eee"),
-    yaxis=dict(range=[-limit/1.5, limit/1.5], scaleanchor="x", scaleratio=1, zeroline=True, zerolinecolor="black", gridcolor="#eee"),
-    plot_bgcolor="white"
+    xaxis=dict(
+        visible=False,
+        range=[-1.5, max(V1.real + 1.5, 6)]
+    ),
+    yaxis=dict(
+        visible=False,
+        range=[min(Im_vec.imag - 1.0, -2.5), max(V1.imag + 1.0, 3.5)],
+        scaleanchor="x"
+    ),
+    height=850,
+    showlegend=False,
+    plot_bgcolor="white",
+    paper_bgcolor="white"
 )
 
 st.plotly_chart(fig, use_container_width=True)
-st.success(f"**{steps[curr_step-1]['label']}**: {steps[curr_step-1]['desc']}")
 
-# ================= THEORY NOTES =================
-st.divider()
-col1, col2 = st.columns(2)
-with col1:
-    st.markdown("### 🔍 Key Insight: Phase Opposition")
-    st.write("""
-    By Lenz's Law, the primary induced voltage opposes the change in flux. In our diagram, 
-    $-E_1$ is drawn $180^\circ$ away from $E_2$ to represent this phase opposition. 
-    This creates the 'left-hand' side of the diagram, visually separating the input 
-    source from the output load.
-    """)
+# ================= THEORY =================
+st.markdown("### 🧠 Construction Steps")
+st.markdown("""
+1. Take **V₂** as reference.  
+2. Draw **I₂** lagging by θ₂.  
+3. Add **I₂R₂** in phase with I₂.  
+4. Add **jI₂X₂** perpendicular to I₂.  
+5. Obtain **E₂**.  
+6. Scale to get **E₁ = aE₂**.  
+7. Draw **Ic** and **Im** to form **Iϕ**.  
+8. Add **Ip + Iϕ = I₁**.  
+9. Add **I₁R₁** and **jI₁X₁** to get **V₁**.  
+""")
 
-with col2:
-    st.markdown("### 📈 Efficiency Info")
-    v1_mag = np.abs(minus_V1)
-    v2_referred = v1_mag / a
-    reg = ((v2_referred - 1.0) / 1.0) * 100
-    st.metric("Voltage Regulation", f"{reg:.2f}%")
+st.markdown("---")
+st.markdown("### 🎓 Complete Textbook-Style Transformer Phasor Diagram")
+st.markdown("Voltage • Current • EMF • Drops • Power Factor ⚡")
