@@ -353,14 +353,14 @@ with col1:
     st.latex(r"E_1 = -aE_2")
     st.latex(r"E \propto \frac{d\Phi}{dt}")
     st.latex(r"I_1 = I_2' + I_0")
-    st.latex(r"V_1 = E_1 + I_1R_1 + jI_1X_1")
+    st.latex(r"V_1 = -E_1 + I_1R_1 + jI_1X_1")
 
 with col2:
     st.markdown("### 📊 Performance")
     regulation = ((np.abs(V1) / a - np.abs(V2)) / np.abs(V2)) * 100
 
     st.metric("Voltage Regulation", f"{regulation:.2f}%")
-    st.metric("Primary PF Angle θ₁", f"{np.degrees(np.angle(I1)):.2f}°")
+    st.metric("Primary PF Angle θ₁", f"{np.degrees(np.angle(V1-I1)):.2f}°")
 
 # ================= FOOTER =================
 st.markdown("---")
