@@ -1,6 +1,8 @@
 =========================================
-⚡ TRANSFORMER WORKING SIMULATOR
-Streamlit App - Basic Electrical Engineering
+# =========================================
+# TRANSFORMER WORKING SIMULATOR
+# Streamlit App - Basic Electrical Engineering
+# =========================================
 =========================================
 
 import streamlit as st
