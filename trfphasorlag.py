@@ -148,7 +148,7 @@ I1 = I2_prime + I0
 I1R1 = I1 * r1
 jI1X1 = I1 * 1j * x1
 
-V1 = E1 + I1R1 + jI1X1
+V1 = -E1 + I1R1 + jI1X1
 
 # ================= STEPS =================
 steps = [
