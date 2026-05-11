@@ -61,10 +61,6 @@ with col3:
         if st.session_state.step_index < 11:
             st.session_state.step_index += 1
 
-
-
-
-
 # ================= CURRENT STEP =================
 curr_step = st.session_state.step_index
 
