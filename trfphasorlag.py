@@ -61,17 +61,7 @@ with col3:
         if st.session_state.step_index < 11:
             st.session_state.step_index += 1
 
-# ================= OPTIONAL AUTO PLAY =================
-st.markdown("### ▶️ Auto Simulation")
 
-play_col1, play_col2 = st.columns(2)
-
-with play_col1:
-    play_clicked = st.button("▶️ Play All Steps", use_container_width=True)
-
-with play_col2:
-    if st.button("🔄 Reset", use_container_width=True):
-        st.session_state.step_index = 1
 
 
 
