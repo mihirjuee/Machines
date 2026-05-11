@@ -146,20 +146,7 @@ steps = [
     "Add I₁R₁ and jI₁X₁ to obtain source voltage V₁."
 ]
 
-# ================= PLAYBACK =================
-if play_clicked:
-    for i in range(st.session_state.step_index, 12):
-        st.session_state.step_index = i
-        time.sleep(0.8)
-        st.rerun()
 
-curr_step = st.select_slider(
-    "📍 Current Construction Step",
-    options=list(range(1, 12)),
-    value=st.session_state.step_index
-)
-
-st.session_state.step_index = curr_step
 
 # ================= DRAW FUNCTION =================
 def draw_vector(fig, start, end, label, color, width=4, dash=None, shiftx=0, shifty=0):
