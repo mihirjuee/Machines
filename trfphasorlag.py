@@ -4,40 +4,58 @@ import plotly.graph_objects as go
 
 # ================= PAGE =================
 st.set_page_config(page_title="Transformer Phasor Diagram", layout="wide")
-st.title("⚡ Transformer Phasor Diagram (Textbook Style)")
+st.title("⚡ Transformer Phasor Diagram")
+st.markdown("## Primary Power Factor = cos θ₁ (angle between V₁ & I₁)")
 
 # ================= SIDEBAR =================
 with st.sidebar:
     st.header("🔧 Parameters")
 
-    V2 = st.slider("Secondary Voltage V₂ (pu)", 0.5, 1.5, 1.0)
-    I2 = st.slider("Secondary Current I₂ (pu)", 0.2, 1.5, 0.8)
-    phi_deg = st.slider("Power Factor Angle φ (lagging)", 0, 70, 30)
+    V1 = st.slider("V₁ (pu)", 0.5, 1.5, 1.0)
+    I1 = st.slider("I₁ (pu)", 0.2, 1.5, 0.8)
 
-    R2 = st.slider("Secondary Resistance R₂", 0.0, 0.3, 0.1)
-    X2 = st.slider("Secondary Reactance X₂", 0.0, 0.5, 0.2)
+    theta1_deg = st.slider("Power Factor cos θ₁", 0, 70, 30)
+
+    V2 = st.slider("V₂ (pu)", 0.3, 1.5, 0.6)
+    I2 = st.slider("I₂ (pu)", 0.2, 1.5, 0.8)
+
+    r1 = st.slider("R₁ (pu)", 0.0, 0.1, 0.02)
+    x1 = st.slider("X₁ (pu)", 0.0, 0.2, 0.08)
+
+    r2 = st.slider("R₂ (pu)", 0.0, 0.1, 0.02)
+    x2 = st.slider("X₂ (pu)", 0.0, 0.2, 0.08)
 
     a = st.slider("Turns Ratio a = N₁/N₂", 1.0, 4.0, 2.0)
 
 # ================= CALCULATIONS =================
-phi = np.radians(phi_deg)
+theta1 = np.radians(theta1_deg)
 
-# Secondary side
-V2_vec = complex(V2, 0)
-I2_vec = I2 * np.exp(-1j * phi)
+# Reference axis
+phi_axis = complex(1, 0)
 
-IR2 = I2_vec * R2
-IX2 = I2_vec * 1j * X2
+# Primary
+I1_vec = I1 * np.exp(1j * theta1)
+Ic_vec = 0.45 * np.exp(1j * np.radians(20))
 
-E2_vec = V2_vec + IR2 + IX2
+V1_vec = complex(0, V1)  # vertical like textbook
+I1r1 = I1_vec * r1
+jI1x1 = I1_vec * 1j * x1
 
-# Primary side (different scale)
-E1_vec = a * E2_vec
-I2_prime = I2_vec / a
+V1_prime = complex(0.15, V1 * 0.85)
+
+# Secondary
+theta2 = np.radians(35)
+I2_vec = I2 * np.exp(1j * (np.pi + theta2))
+
+V2_vec = 0.9 * np.exp(1j * np.radians(240))
+
+I2r2 = I2_vec * r2
+jI2x2 = I2_vec * 1j * x2
+
+E_common = complex(0, -1.6)
 
 # ================= DRAW FUNCTION =================
-def draw_vector(fig, start, end, label, color, width=4, label_shift=18):
-    # Main line
+def draw_arrow(fig, start, end, label, color, width=4, shiftx=0, shifty=0):
     fig.add_trace(go.Scatter(
         x=[start.real, end.real],
         y=[start.imag, end.imag],
@@ -45,7 +63,6 @@ def draw_vector(fig, start, end, label, color, width=4, label_shift=18):
         line=dict(color=color, width=width)
     ))
 
-    # Arrow head
     fig.add_annotation(
         x=end.real,
         y=end.imag,
@@ -53,130 +70,113 @@ def draw_vector(fig, start, end, label, color, width=4, label_shift=18):
         ay=start.imag,
         showarrow=True,
         arrowhead=3,
-        arrowsize=1.5,
+        arrowsize=1.4,
         arrowwidth=2.5,
         arrowcolor=color
     )
 
-    # Label
     fig.add_annotation(
-        x=end.real,
-        y=end.imag,
+        x=end.real + shiftx,
+        y=end.imag + shifty,
         text=f"<b>{label}</b>",
         showarrow=False,
-        font=dict(size=15, color=color),
-        bgcolor="white",
-        yshift=label_shift
+        font=dict(size=16, color=color)
     )
 
 # ================= FIGURE =================
 fig = go.Figure()
+origin = 0 + 0j
 
-# ---------------- SECONDARY SIDE (LEFT) ----------------
-secondary_origin = complex(-3.5, 0)
+# Ø axis
+draw_arrow(fig, origin, complex(3.8, 0), "Ø", "#d97706", width=3)
 
-draw_vector(fig, secondary_origin, secondary_origin + V2_vec, "V₂", "black")
-draw_vector(fig, secondary_origin, secondary_origin + I2_vec, "I₂", "blue")
+# Primary side
+draw_arrow(fig, origin, V1_vec, "V1", "#f97316", shiftx=-0.25)
+draw_arrow(fig, origin, I1_vec, "I1", "#1d4ed8", shiftx=0.15)
+draw_arrow(fig, origin, Ic_vec, "Ic", "#ea580c", shiftx=0.12)
 
-draw_vector(
-    fig,
-    secondary_origin + V2_vec,
-    secondary_origin + V2_vec + IR2,
-    "I₂R₂",
-    "green"
-)
+draw_arrow(fig, origin, V1_prime, "V1′=E1", "#f97316", shiftx=0.2)
+draw_arrow(fig, V1_prime, V1_prime + I1r1, "I1r1", "#84cc16", shiftx=0.15)
+draw_arrow(fig, V1_prime + I1r1, V1_prime + I1r1 + jI1x1, "jI1X1", "#16a34a", shiftx=0.15)
 
-draw_vector(
-    fig,
-    secondary_origin + V2_vec + IR2,
-    secondary_origin + E2_vec,
-    "jI₂X₂",
-    "orange"
-)
+# Secondary side
+draw_arrow(fig, origin, I2_vec, "I2", "#7e22ce", shiftx=-0.2)
+draw_arrow(fig, origin, V2_vec, "V2", "#f97316", shiftx=-0.15)
 
-draw_vector(fig, secondary_origin, secondary_origin + E2_vec, "E₂", "purple", width=5)
+draw_arrow(fig, V2_vec, V2_vec + I2r2, "I2r2", "#84cc16", shiftx=-0.15)
+draw_arrow(fig, V2_vec + I2r2, E_common, "jI2X2", "#16a34a", shiftx=-0.15)
 
-# ---------------- PRIMARY SIDE (RIGHT) ----------------
-primary_origin = complex(3.5, 0)
+# Common E1,E2
+draw_arrow(fig, origin, E_common, "E1,E2", "#f97316", width=4, shiftx=0.25)
 
-draw_vector(fig, primary_origin, primary_origin + E1_vec, "E₁", "red", width=5)
-draw_vector(fig, primary_origin, primary_origin + I2_prime, "I₂′", "brown")
+# ================= ANGLES =================
+theta_arc = np.linspace(np.pi/2 - theta1, np.pi/2, 40)
+fig.add_trace(go.Scatter(
+    x=0.45 * np.cos(theta_arc),
+    y=0.45 * np.sin(theta_arc),
+    mode="lines",
+    line=dict(color="gray", width=2)
+))
+fig.add_annotation(x=0.35, y=0.55, text="θ1", showarrow=False, font=dict(size=15))
 
-# ---------------- DIVIDER LINE ----------------
-fig.add_shape(
-    type="line",
-    x0=0,
-    y0=-4,
-    x1=0,
-    y1=4,
-    line=dict(color="gray", dash="dash", width=3)
-)
+alpha_arc = np.linspace(0, np.radians(20), 40)
+fig.add_trace(go.Scatter(
+    x=0.7 * np.cos(alpha_arc),
+    y=0.7 * np.sin(alpha_arc),
+    mode="lines",
+    line=dict(color="gray", width=2)
+))
+fig.add_annotation(x=0.85, y=0.15, text="α", showarrow=False, font=dict(size=15))
 
-# ---------------- LABELS ----------------
-fig.add_annotation(
-    x=-3.5,
-    y=3.8,
-    text="<b>SECONDARY SIDE</b>",
-    showarrow=False,
-    font=dict(size=18, color="black")
-)
+theta2_arc = np.linspace(np.radians(215), np.radians(240), 40)
+fig.add_trace(go.Scatter(
+    x=0.55 * np.cos(theta2_arc),
+    y=0.55 * np.sin(theta2_arc),
+    mode="lines",
+    line=dict(color="gray", width=2)
+))
+fig.add_annotation(x=-0.45, y=-0.45, text="θ2", showarrow=False, font=dict(size=15))
 
-fig.add_annotation(
-    x=3.5,
-    y=3.8,
-    text="<b>PRIMARY SIDE</b>",
-    showarrow=False,
-    font=dict(size=18, color="black")
-)
-
-# ================= AXES =================
+# ================= STYLE =================
 fig.update_layout(
     template="plotly_white",
     xaxis=dict(
-        title="Real Axis",
-        range=[-8, 8],
-        zeroline=True,
-        zerolinewidth=2,
-        zerolinecolor="black",
-        showgrid=True,
-        gridcolor="lightgray"
+        range=[-2.5, 4.2],
+        zeroline=False,
+        showgrid=False,
+        visible=False
     ),
     yaxis=dict(
-        title="Imaginary Axis",
-        range=[-4, 4],
-        zeroline=True,
-        zerolinewidth=2,
-        zerolinecolor="black",
-        showgrid=True,
-        gridcolor="lightgray",
+        range=[-2.2, 2.4],
+        zeroline=False,
+        showgrid=False,
+        visible=False,
         scaleanchor="x"
     ),
-    height=750,
-    showlegend=False
+    height=850,
+    showlegend=False,
+    plot_bgcolor="#f3f4f6",
+    paper_bgcolor="#f3f4f6"
 )
 
-# ================= DISPLAY =================
 st.plotly_chart(fig, use_container_width=True)
 
-# ================= THEORY =================
-st.subheader("📘 Textbook Construction Steps")
+# ================= INFO =================
+st.markdown("### 📘 Legend")
 st.markdown("""
-**Secondary Side:**  
-1. Draw V₂ as reference  
-2. Draw I₂ lagging by φ  
-3. Add I₂R₂ in phase with I₂  
-4. Add jI₂X₂ perpendicular to I₂  
-5. Result gives E₂  
-
-**Primary Side:**  
-6. E₁ = aE₂ (scaled by turns ratio)  
-7. I₂′ = I₂/a  
+- **V₁** = Primary Voltage  
+- **I₁** = Primary Current  
+- **I₁r₁** = Primary Resistive Drop  
+- **jI₁X₁** = Primary Reactive Drop  
+- **V₁′ = E₁** = Internal Primary EMF  
+- **Ic** = Exciting Current  
+- **V₂** = Secondary Voltage  
+- **I₂** = Secondary Current  
+- **I₂r₂** = Secondary Resistive Drop  
+- **jI₂X₂** = Secondary Reactive Drop  
+- **E₁ = E₂** = Common Induced EMF  
 """)
 
-st.latex(r"E_2 = V_2 + I_2R_2 + jI_2X_2")
-st.latex(r"E_1 = aE_2")
-
-# ================= FOOTER =================
 st.markdown("---")
-st.markdown("### 🎓 Textbook Style Transformer Phasor Diagram")
-st.markdown("Primary and Secondary shown separately for clear conceptual understanding ⚡")
+st.markdown("### θ₁ = angle between V₁ and I₁ (Primary Power Factor Angle)")
+st.markdown("### θ₂ = angle between V₂ and I₂")
