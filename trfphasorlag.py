@@ -18,8 +18,8 @@ st.markdown("""
 # ================= TITLE =================
 st.title("⚡ Transformer Phasor Lab: Textbook Style Step-by-Step")
 st.markdown("""
-This simulator constructs the **complete transformer phasor diagram** exactly like textbook vector addition.  
-**Primary phasors are drawn on the LEFT** and **Secondary phasors on the RIGHT** for visual clarity.
+This simulator constructs the **complete transformer phasor diagram** step-by-step exactly like textbook vector addition.  
+**Primary phasors are on the LEFT**, **Secondary phasors on the RIGHT**, with **Flux Vector Φ** included for conceptual clarity.
 """)
 
 # ================= SESSION =================
@@ -42,6 +42,7 @@ with st.sidebar:
     i2_mag = st.slider("Load Current I₂", 0.2, 1.2, 0.8)
 
     st.subheader("Internal Parameters")
+
     r1 = st.slider("R₁", 0.0, 0.3, 0.10)
     x1 = st.slider("X₁", 0.0, 0.5, 0.25)
 
@@ -53,9 +54,10 @@ with st.sidebar:
 
 # ================= CALCULATIONS =================
 theta2 = np.radians(pf_angle)
+
 origin = 0 + 0j
 
-# ---------- SECONDARY ----------
+# ---------- SECONDARY SIDE ----------
 V2 = 1.0 + 0j
 I2 = i2_mag * (np.cos(theta2) - 1j * np.sin(theta2))
 
@@ -64,18 +66,28 @@ jI2X2 = I2 * 1j * x2
 
 E2 = V2 + I2R2 + jI2X2
 
-# ---------- PRIMARY ----------
-E1 = -a * E2   # Opposite direction (Lenz's law)
+# ---------- PRIMARY SIDE ----------
+E1 = -a * E2  # Lenz's Law opposition
+
+# ---------- FLUX VECTOR ----------
+# EMF leads flux by 90°, so flux lags E1 by 90°
+phi_flux = (E1 / np.abs(E1)) * np.exp(-1j * np.pi / 2) * 0.9
+
+# ---------- REFERRED CURRENT ----------
 I2_prime = -(I2 / a)
 
-# Excitation current aligned with E1
+# ---------- EXCITATION CURRENT ----------
 E1_unit = E1 / np.abs(E1)
+
 Ic_vec = ic * E1_unit
 Im_vec = im * (E1_unit * -1j)
 
 I0 = Ic_vec + Im_vec
+
+# ---------- PRIMARY CURRENT ----------
 I1 = I2_prime + I0
 
+# ---------- PRIMARY VOLTAGE ----------
 I1R1 = I1 * r1
 jI1X1 = I1 * 1j * x1
 
@@ -89,22 +101,23 @@ steps = [
     "Add jI₂X₂ perpendicular to I₂.",
     "Resultant gives secondary induced EMF E₂.",
     "Reflect E₂ to primary as −E₁.",
-    "Draw referred current I₂′.",
-    "Add excitation current I₀.",
+    "Add magnetic flux vector Φ (lags E₁ by 90°).",
+    "Draw referred current I₂′ on primary side.",
+    "Add no-load current I₀ = Ic + Im.",
     "Vector sum gives primary current I₁.",
-    "Add I₁R₁ and jI₁X₁ to obtain V₁."
+    "Add I₁R₁ and jI₁X₁ to obtain source voltage V₁."
 ]
 
 # ================= PLAYBACK =================
 if play_clicked:
-    for i in range(st.session_state.step_index, 11):
+    for i in range(st.session_state.step_index, 12):
         st.session_state.step_index = i
         time.sleep(0.8)
         st.rerun()
 
 curr_step = st.select_slider(
     "📍 Current Construction Step",
-    options=list(range(1, 11)),
+    options=list(range(1, 12)),
     value=st.session_state.step_index
 )
 
@@ -147,7 +160,7 @@ def draw_vector(fig, start, end, label, color, width=4, dash=None, shiftx=0, shi
 # ================= FIGURE =================
 fig = go.Figure()
 
-# ----- SECONDARY SIDE (RIGHT) -----
+# ---------- SECONDARY SIDE ----------
 if curr_step >= 1:
     draw_vector(fig, origin, V2, "V₂", "blue", width=5, shifty=-0.12)
 
@@ -163,43 +176,87 @@ if curr_step >= 4:
 if curr_step >= 5:
     draw_vector(fig, origin, E2, "E₂", "#22c55e", width=5, shifty=0.15)
 
-# ----- PRIMARY SIDE (LEFT) -----
+# ---------- PRIMARY SIDE ----------
 if curr_step >= 6:
     draw_vector(fig, origin, E1, "−E₁", "purple", width=5, shifty=0.15)
 
+# ---------- FLUX ----------
 if curr_step >= 7:
+    draw_vector(
+        fig,
+        origin,
+        phi_flux,
+        "Φ",
+        "#06b6d4",
+        width=4,
+        dash="dot",
+        shifty=0.15
+    )
+
+# ---------- REFERRED CURRENT ----------
+if curr_step >= 8:
     draw_vector(fig, origin, I2_prime, "I₂′", "orange", width=3, dash="dash")
 
-if curr_step >= 8:
-    draw_vector(fig, origin, I0, "I₀", "gray", width=3)
-
+# ---------- NO LOAD CURRENT ----------
 if curr_step >= 9:
+    draw_vector(fig, origin, Ic_vec, "Ic", "#f59e0b", width=3)
+    draw_vector(fig, origin, Im_vec, "Im", "#eab308", width=3)
+    draw_vector(fig, origin, I0, "I₀", "gray", width=4)
+
+# ---------- PRIMARY CURRENT ----------
+if curr_step >= 10:
     draw_vector(fig, origin, I1, "I₁", "red", width=4)
 
-if curr_step >= 10:
+# ---------- PRIMARY VOLTAGE ----------
+if curr_step >= 11:
     draw_vector(fig, E1, E1 + I1R1, "I₁R₁", "#f97316", width=3)
     draw_vector(fig, E1 + I1R1, V1, "jI₁X₁", "#dc2626", width=3)
     draw_vector(fig, origin, V1, "V₁", "darkblue", width=5, shifty=0.15)
 
-# ================= ANGLES =================
+# ================= ANGLE ARC =================
 theta_arc = np.linspace(-theta2, 0, 40)
+
 fig.add_trace(go.Scatter(
     x=0.5 * np.cos(theta_arc),
     y=0.5 * np.sin(theta_arc),
     mode="lines",
     line=dict(color="gray", dash="dot")
 ))
-fig.add_annotation(x=0.4, y=-0.12, text="θ₂", showarrow=False)
 
-# ================= LABELS =================
-fig.add_annotation(x=-2.2, y=1.8, text="<b>PRIMARY SIDE</b>", showarrow=False, font=dict(size=18))
-fig.add_annotation(x=2.2, y=1.8, text="<b>SECONDARY SIDE</b>", showarrow=False, font=dict(size=18))
+fig.add_annotation(
+    x=0.4,
+    y=-0.12,
+    text="θ₂",
+    showarrow=False
+)
+
+# ================= SIDE LABELS =================
+fig.add_annotation(
+    x=-2.4,
+    y=1.9,
+    text="<b>PRIMARY SIDE</b>",
+    showarrow=False,
+    font=dict(size=18)
+)
+
+fig.add_annotation(
+    x=2.4,
+    y=1.9,
+    text="<b>SECONDARY SIDE</b>",
+    showarrow=False,
+    font=dict(size=18)
+)
 
 # ================= STYLE =================
-limit = max(abs(V1.real), abs(E1.real), abs(E2.real), 2.5) + 1.2
+limit = max(
+    abs(V1.real),
+    abs(E1.real),
+    abs(E2.real),
+    2.5
+) + 1.4
 
 fig.update_layout(
-    height=800,
+    height=820,
     xaxis=dict(
         range=[-limit, limit],
         zeroline=True,
@@ -209,7 +266,7 @@ fig.update_layout(
         gridcolor="#e5e7eb"
     ),
     yaxis=dict(
-        range=[-limit / 1.6, limit / 1.6],
+        range=[-limit / 1.7, limit / 1.7],
         zeroline=True,
         zerolinewidth=2,
         zerolinecolor="black",
@@ -222,6 +279,7 @@ fig.update_layout(
     paper_bgcolor="white"
 )
 
+# ================= DISPLAY =================
 st.plotly_chart(fig, use_container_width=True)
 
 # ================= STEP INFO =================
@@ -236,16 +294,18 @@ with col1:
     st.markdown("### 📘 Key Equations")
     st.latex(r"E_2 = V_2 + I_2R_2 + jI_2X_2")
     st.latex(r"E_1 = -aE_2")
+    st.latex(r"E \propto \frac{d\Phi}{dt}")
     st.latex(r"I_1 = I_2' + I_0")
     st.latex(r"V_1 = E_1 + I_1R_1 + jI_1X_1")
 
 with col2:
     st.markdown("### 📊 Performance")
     regulation = ((np.abs(V1) / a - np.abs(V2)) / np.abs(V2)) * 100
+
     st.metric("Voltage Regulation", f"{regulation:.2f}%")
     st.metric("Primary PF Angle θ₁", f"{np.degrees(np.angle(I1)):.2f}°")
 
 # ================= FOOTER =================
 st.markdown("---")
 st.markdown("### 🎓 Transformer Phasor Lab")
-st.markdown("Textbook Construction • Stepwise Learning • Visual Clarity ⚡")
+st.markdown("Flux • EMF • Current • Voltage • Textbook Construction ⚡")
