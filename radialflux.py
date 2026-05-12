@@ -17,11 +17,11 @@ st.title("⚡ Rotating Magnetic Field (RMF) Simulation")
 
 st.markdown("""
 ### Features
-- Rotating magnetic field visualization
-- N/S pole movement
-- Time phase animation
-- Flux wave distribution
-- Stator magnetic field direction
+- Rotating magnetic field
+- Air-gap flux density distribution
+- Rotating N-S poles
+- Flux arrows
+- 0, T/4, T/2 conditions
 """)
 
 # =========================================================
@@ -56,7 +56,10 @@ def draw_stator(ax, angle_deg):
     ax.set_xlim(-1.5, 1.5)
     ax.set_ylim(-1.5, 1.5)
 
-    # Outer stator
+    # -----------------------------------------------------
+    # OUTER STATOR
+    # -----------------------------------------------------
+
     outer = patches.Circle(
         (0, 0),
         1.0,
@@ -66,7 +69,10 @@ def draw_stator(ax, angle_deg):
 
     ax.add_patch(outer)
 
-    # Inner stator
+    # -----------------------------------------------------
+    # INNER ROTOR
+    # -----------------------------------------------------
+
     inner = patches.Circle(
         (0, 0),
         0.25,
@@ -76,7 +82,10 @@ def draw_stator(ax, angle_deg):
 
     ax.add_patch(inner)
 
-    # Slots
+    # -----------------------------------------------------
+    # STATOR SLOTS
+    # -----------------------------------------------------
+
     for ang in np.linspace(0, 2*np.pi, 12, endpoint=False):
 
         x1 = 0.75 * np.cos(ang)
@@ -85,9 +94,16 @@ def draw_stator(ax, angle_deg):
         x2 = 1.0 * np.cos(ang)
         y2 = 1.0 * np.sin(ang)
 
-        ax.plot([x1, x2], [y1, y2], color='black')
+        ax.plot(
+            [x1, x2],
+            [y1, y2],
+            color='black'
+        )
 
-    # Rotating magnetic field arrow
+    # -----------------------------------------------------
+    # RMF ARROW
+    # -----------------------------------------------------
+
     theta = np.radians(angle_deg)
 
     x = 0.8 * np.cos(theta)
@@ -104,7 +120,10 @@ def draw_stator(ax, angle_deg):
         color='red'
     )
 
-    # N Pole
+    # -----------------------------------------------------
+    # N POLE
+    # -----------------------------------------------------
+
     ax.text(
         0.95*np.cos(theta),
         0.95*np.sin(theta),
@@ -115,7 +134,10 @@ def draw_stator(ax, angle_deg):
         ha='center'
     )
 
-    # S Pole
+    # -----------------------------------------------------
+    # S POLE
+    # -----------------------------------------------------
+
     ax.text(
         -0.95*np.cos(theta),
         -0.95*np.sin(theta),
@@ -126,80 +148,110 @@ def draw_stator(ax, angle_deg):
         ha='center'
     )
 
-    ax.set_title(f"Field Angle = {angle_deg}°")
+    ax.set_title(
+        f"Field Angle = {angle_deg}°",
+        fontsize=12
+    )
 
     ax.axis('off')
 
 # =========================================================
-# DRAW FLUX WAVE
+# DRAW AIR-GAP FLUX DENSITY DISTRIBUTION
 # =========================================================
 
 def draw_flux_wave(ax, phase_deg):
 
     x = np.linspace(0, 360, 1000)
 
+    # Air-gap flux density wave
     y = np.sin(np.radians(x - phase_deg))
 
-    ax.plot(x, y, linewidth=3)
+    # -----------------------------------------------------
+    # MAIN CURVE
+    # -----------------------------------------------------
 
-    ax.axhline(0, color='black')
+    ax.plot(
+        x,
+        y,
+        linewidth=3,
+        color='black'
+    )
 
-    # Vertical phase lines
+    # -----------------------------------------------------
+    # ZERO AXIS
+    # -----------------------------------------------------
+
+    ax.axhline(
+        0,
+        color='black',
+        linewidth=1
+    )
+
+    # -----------------------------------------------------
+    # ANGULAR DIVISIONS
+    # -----------------------------------------------------
+
     for v in [0, 90, 180, 270, 360]:
 
-        ax.axvline(v, color='gray')
+        ax.axvline(
+            v,
+            color='gray',
+            linewidth=0.8
+        )
 
-    # Fill positive and negative
-    ax.fill_between(
-        x,
-        y,
-        where=(y >= 0),
-        alpha=0.3
-    )
+    # -----------------------------------------------------
+    # FLUX ARROWS
+    # -----------------------------------------------------
 
-    ax.fill_between(
-        x,
-        y,
-        where=(y <= 0),
-        alpha=0.3
-    )
+    arrow_positions = np.linspace(0, 360, 60)
 
-    # Add N/S labels
-    for deg in [45, 225]:
+    for pos in arrow_positions:
+
+        val = np.sin(np.radians(pos - phase_deg))
+
+        ax.arrow(
+            pos,
+            0,
+            0,
+            val * 0.9,
+            width=0.4,
+            head_width=3,
+            head_length=0.08,
+            fc='black',
+            ec='black',
+            length_includes_head=True
+        )
+
+    # -----------------------------------------------------
+    # N AND S REGIONS
+    # -----------------------------------------------------
+
+    regions = [
+
+        (45, "N"),
+        (135, "S"),
+        (225, "N"),
+        (315, "S")
+
+    ]
+
+    for deg, label in regions:
 
         val = np.sin(np.radians(deg - phase_deg))
 
-        if val > 0:
-            label = "N"
-        else:
-            label = "S"
-
         ax.text(
             deg,
-            val*0.7,
+            val * 0.65,
             label,
-            fontsize=22,
+            fontsize=28,
             weight='bold',
-            ha='center'
+            ha='center',
+            color='dimgray'
         )
 
-    for deg in [135, 315]:
-
-        val = np.sin(np.radians(deg - phase_deg))
-
-        if val > 0:
-            label = "N"
-        else:
-            label = "S"
-
-        ax.text(
-            deg,
-            val*0.7,
-            label,
-            fontsize=22,
-            weight='bold',
-            ha='center'
-        )
+    # -----------------------------------------------------
+    # AXIS SETTINGS
+    # -----------------------------------------------------
 
     ax.set_xlim(0, 360)
     ax.set_ylim(-1.2, 1.2)
@@ -212,7 +264,11 @@ def draw_flux_wave(ax, phase_deg):
 
     ax.set_yticks([])
 
-    ax.set_title("Flux Density Distribution")
+    ax.set_title(
+        "Air-Gap Flux Density Distribution",
+        fontsize=12,
+        weight='bold'
+    )
 
 # =========================================================
 # DRAW COMPLETE FIGURE
@@ -220,30 +276,39 @@ def draw_flux_wave(ax, phase_deg):
 
 def draw_frame(angle):
 
-    fig = plt.figure(figsize=(12, 8))
+    fig = plt.figure(figsize=(14, 9))
 
-    # Left stator diagrams
-    ax1 = fig.add_axes([0.05, 0.68, 0.25, 0.25])
-    ax2 = fig.add_axes([0.05, 0.38, 0.25, 0.25])
-    ax3 = fig.add_axes([0.05, 0.08, 0.25, 0.25])
+    # -----------------------------------------------------
+    # LEFT STATOR FIGURES
+    # -----------------------------------------------------
+
+    ax1 = fig.add_axes([0.05, 0.68, 0.22, 0.22])
+    ax2 = fig.add_axes([0.05, 0.38, 0.22, 0.22])
+    ax3 = fig.add_axes([0.05, 0.08, 0.22, 0.22])
 
     draw_stator(ax1, angle)
     draw_stator(ax2, angle + 90)
     draw_stator(ax3, angle + 180)
 
-    # Right waveforms
-    ax4 = fig.add_axes([0.35, 0.68, 0.6, 0.22])
-    ax5 = fig.add_axes([0.35, 0.38, 0.6, 0.22])
-    ax6 = fig.add_axes([0.35, 0.08, 0.6, 0.22])
+    # -----------------------------------------------------
+    # RIGHT AIR-GAP DISTRIBUTIONS
+    # -----------------------------------------------------
+
+    ax4 = fig.add_axes([0.32, 0.68, 0.63, 0.22])
+    ax5 = fig.add_axes([0.32, 0.38, 0.63, 0.22])
+    ax6 = fig.add_axes([0.32, 0.08, 0.63, 0.22])
 
     draw_flux_wave(ax4, angle)
     draw_flux_wave(ax5, angle + 90)
     draw_flux_wave(ax6, angle + 180)
 
-    # Time labels
-    fig.text(0.95, 0.79, "0", fontsize=16)
-    fig.text(0.94, 0.49, "T/4", fontsize=16)
-    fig.text(0.94, 0.19, "T/2", fontsize=16)
+    # -----------------------------------------------------
+    # TIME LABELS
+    # -----------------------------------------------------
+
+    fig.text(0.96, 0.78, "0", fontsize=16)
+    fig.text(0.95, 0.48, "T/4", fontsize=16)
+    fig.text(0.95, 0.18, "T/2", fontsize=16)
 
     return fig
 
