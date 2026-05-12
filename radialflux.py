@@ -9,19 +9,19 @@ import time
 # =========================================================
 
 st.set_page_config(
-    page_title="Rotating Magnetic Field Simulation",
+    page_title="Circular Air-Gap Flux Distribution",
     layout="wide"
 )
 
-st.title("⚡ Rotating Magnetic Field (RMF) Simulation")
+st.title("⚡ Rotating Magnetic Field - Circular Air Gap Flux Distribution")
 
 st.markdown("""
 ### Features
+- Circular air-gap flux density distribution
 - Rotating magnetic field
-- Air-gap flux density distribution
-- Rotating N-S poles
-- Flux arrows
-- 0, T/4, T/2 conditions
+- N-S pole rotation
+- Flux arrow distribution
+- Animated RMF
 """)
 
 # =========================================================
@@ -101,7 +101,7 @@ def draw_stator(ax, angle_deg):
         )
 
     # -----------------------------------------------------
-    # RMF ARROW
+    # ROTATING FIELD VECTOR
     # -----------------------------------------------------
 
     theta = np.radians(angle_deg)
@@ -121,12 +121,12 @@ def draw_stator(ax, angle_deg):
     )
 
     # -----------------------------------------------------
-    # N POLE
+    # N-S POLES
     # -----------------------------------------------------
 
     ax.text(
-        0.95*np.cos(theta),
-        0.95*np.sin(theta),
+        1.1*np.cos(theta),
+        1.1*np.sin(theta),
         "N",
         fontsize=18,
         weight='bold',
@@ -134,13 +134,9 @@ def draw_stator(ax, angle_deg):
         ha='center'
     )
 
-    # -----------------------------------------------------
-    # S POLE
-    # -----------------------------------------------------
-
     ax.text(
-        -0.95*np.cos(theta),
-        -0.95*np.sin(theta),
+        -1.1*np.cos(theta),
+        -1.1*np.sin(theta),
         "S",
         fontsize=18,
         weight='bold',
@@ -149,166 +145,174 @@ def draw_stator(ax, angle_deg):
     )
 
     ax.set_title(
-        f"Field Angle = {angle_deg}°",
+        f"RMF Angle = {angle_deg}°",
         fontsize=12
     )
 
     ax.axis('off')
 
 # =========================================================
-# DRAW AIR-GAP FLUX DENSITY DISTRIBUTION
+# DRAW CIRCULAR AIR-GAP DISTRIBUTION
 # =========================================================
 
-def draw_flux_wave(ax, phase_deg):
+def draw_circular_distribution(ax, phase_deg):
 
-    x = np.linspace(0, 360, 1000)
-
-    # Air-gap flux density wave
-    y = np.sin(np.radians(x - phase_deg))
+    ax.set_xlim(-1.5, 1.5)
+    ax.set_ylim(-1.5, 1.5)
 
     # -----------------------------------------------------
-    # MAIN CURVE
+    # OUTER AIR GAP
     # -----------------------------------------------------
 
-    ax.plot(
-        x,
-        y,
-        linewidth=3,
-        color='black'
+    outer = patches.Circle(
+        (0, 0),
+        1.0,
+        fill=False,
+        linewidth=3
     )
 
+    ax.add_patch(outer)
+
     # -----------------------------------------------------
-    # ZERO AXIS
+    # INNER AIR GAP
     # -----------------------------------------------------
 
-    ax.axhline(
-        0,
-        color='black',
-        linewidth=1
+    inner = patches.Circle(
+        (0, 0),
+        0.55,
+        fill=False,
+        linewidth=2
     )
 
-    # -----------------------------------------------------
-    # ANGULAR DIVISIONS
-    # -----------------------------------------------------
-
-    for v in [0, 90, 180, 270, 360]:
-
-        ax.axvline(
-            v,
-            color='gray',
-            linewidth=0.8
-        )
+    ax.add_patch(inner)
 
     # -----------------------------------------------------
-    # FLUX ARROWS
+    # FLUX ARROWS DISTRIBUTION
     # -----------------------------------------------------
 
-    arrow_positions = np.linspace(0, 360, 60)
+    angles = np.linspace(0, 360, 48)
 
-    for pos in arrow_positions:
+    for ang in angles:
 
-        val = np.sin(np.radians(pos - phase_deg))
+        theta = np.radians(ang)
+
+        # Sinusoidal flux distribution
+        B = np.sin(np.radians(ang - phase_deg))
+
+        # Arrow start
+        r1 = 0.6
+
+        x1 = r1 * np.cos(theta)
+        y1 = r1 * np.sin(theta)
+
+        # Arrow direction
+        dx = B * 0.35 * np.cos(theta)
+        dy = B * 0.35 * np.sin(theta)
 
         ax.arrow(
-            pos,
-            0,
-            0,
-            val * 0.9,
-            width=0.4,
-            head_width=3,
-            head_length=0.08,
+            x1,
+            y1,
+            dx,
+            dy,
+            width=0.01,
+            head_width=0.05,
+            head_length=0.06,
             fc='black',
             ec='black',
             length_includes_head=True
         )
 
     # -----------------------------------------------------
-    # N AND S REGIONS
+    # N-S REGIONS
     # -----------------------------------------------------
 
-    regions = [
+    theta_n = np.radians(phase_deg)
 
-        (45, "N"),
-        (135, "S"),
-        (225, "N"),
-        (315, "S")
+    theta_s = np.radians(phase_deg + 180)
 
-    ]
-
-    for deg, label in regions:
-
-        val = np.sin(np.radians(deg - phase_deg))
-
-        ax.text(
-            deg,
-            val * 0.65,
-            label,
-            fontsize=28,
-            weight='bold',
-            ha='center',
-            color='dimgray'
-        )
-
-    # -----------------------------------------------------
-    # AXIS SETTINGS
-    # -----------------------------------------------------
-
-    ax.set_xlim(0, 360)
-    ax.set_ylim(-1.2, 1.2)
-
-    ax.set_xticks([0, 90, 180, 270, 360])
-
-    ax.set_xticklabels(
-        ["0°", "90°", "180°", "270°", "360°"]
+    ax.text(
+        1.15*np.cos(theta_n),
+        1.15*np.sin(theta_n),
+        "N",
+        fontsize=26,
+        weight='bold',
+        color='red',
+        ha='center'
     )
 
-    ax.set_yticks([])
+    ax.text(
+        1.15*np.cos(theta_s),
+        1.15*np.sin(theta_s),
+        "S",
+        fontsize=26,
+        weight='bold',
+        color='blue',
+        ha='center'
+    )
+
+    # -----------------------------------------------------
+    # DEGREE MARKS
+    # -----------------------------------------------------
+
+    for ang in [0, 90, 180, 270]:
+
+        theta = np.radians(ang)
+
+        ax.text(
+            1.35*np.cos(theta),
+            1.35*np.sin(theta),
+            f"{ang}°",
+            fontsize=10,
+            ha='center'
+        )
 
     ax.set_title(
-        "Air-Gap Flux Density Distribution",
+        "Circular Air-Gap Flux Density Distribution",
         fontsize=12,
         weight='bold'
     )
 
+    ax.axis('off')
+
 # =========================================================
-# DRAW COMPLETE FIGURE
+# DRAW COMPLETE FRAME
 # =========================================================
 
 def draw_frame(angle):
 
-    fig = plt.figure(figsize=(14, 9))
+    fig = plt.figure(figsize=(14, 10))
 
     # -----------------------------------------------------
-    # LEFT STATOR FIGURES
+    # LEFT SIDE - RMF
     # -----------------------------------------------------
 
-    ax1 = fig.add_axes([0.05, 0.68, 0.22, 0.22])
-    ax2 = fig.add_axes([0.05, 0.38, 0.22, 0.22])
-    ax3 = fig.add_axes([0.05, 0.08, 0.22, 0.22])
+    ax1 = fig.add_axes([0.05, 0.68, 0.28, 0.25])
+    ax2 = fig.add_axes([0.05, 0.38, 0.28, 0.25])
+    ax3 = fig.add_axes([0.05, 0.08, 0.28, 0.25])
 
     draw_stator(ax1, angle)
     draw_stator(ax2, angle + 90)
     draw_stator(ax3, angle + 180)
 
     # -----------------------------------------------------
-    # RIGHT AIR-GAP DISTRIBUTIONS
+    # RIGHT SIDE - CIRCULAR DISTRIBUTION
     # -----------------------------------------------------
 
-    ax4 = fig.add_axes([0.32, 0.68, 0.63, 0.22])
-    ax5 = fig.add_axes([0.32, 0.38, 0.63, 0.22])
-    ax6 = fig.add_axes([0.32, 0.08, 0.63, 0.22])
+    ax4 = fig.add_axes([0.42, 0.68, 0.5, 0.25])
+    ax5 = fig.add_axes([0.42, 0.38, 0.5, 0.25])
+    ax6 = fig.add_axes([0.42, 0.08, 0.5, 0.25])
 
-    draw_flux_wave(ax4, angle)
-    draw_flux_wave(ax5, angle + 90)
-    draw_flux_wave(ax6, angle + 180)
+    draw_circular_distribution(ax4, angle)
+    draw_circular_distribution(ax5, angle + 90)
+    draw_circular_distribution(ax6, angle + 180)
 
     # -----------------------------------------------------
     # TIME LABELS
     # -----------------------------------------------------
 
-    fig.text(0.96, 0.78, "0", fontsize=16)
-    fig.text(0.95, 0.48, "T/4", fontsize=16)
-    fig.text(0.95, 0.18, "T/2", fontsize=16)
+    fig.text(0.93, 0.78, "0", fontsize=16)
+    fig.text(0.92, 0.48, "T/4", fontsize=16)
+    fig.text(0.92, 0.18, "T/2", fontsize=16)
 
     return fig
 
