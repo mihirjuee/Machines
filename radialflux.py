@@ -8,132 +8,131 @@ import time
 # PAGE CONFIG
 # =========================================================
 st.set_page_config(
-    page_title="RMF Air-Gap Distribution",
+    page_title="Multi-Pole RMF Visualization",
     layout="wide"
 )
 
-st.title("⚡ Interactive Rotating Magnetic Field")
+st.title("⚡ Multi-Pole Rotating Magnetic Field")
 st.markdown("""
-This tool visualizes how 3-phase currents create a constant-magnitude rotating magnetic field (RMF) 
-and how that field is distributed across the air-gap.
+Adjust the number of poles to see how the magnetic sectors multiply and rotate. 
+In a multi-pole machine, the magnetic field rotates **mechanically** slower for the same electrical frequency.
 """)
 
 # =========================================================
 # SIDEBAR CONTROLS
 # =========================================================
-st.sidebar.header("Simulation Settings")
-speed = st.sidebar.slider("Animation Speed", 0.05, 0.5, 0.1)
-resolution = st.sidebar.slider("Flux Arrow Density", 24, 72, 48)
+st.sidebar.header("Machine Parameters")
+# Pole count must be even
+poles = st.sidebar.select_slider("Number of Poles (P)", options=[2, 4, 6, 8], value=2)
+speed = st.sidebar.slider("Animation Speed", 0.01, 0.5, 0.1)
+arrow_density = st.sidebar.slider("Flux Arrow Density", 48, 120, 72)
 
 if "run_animation" not in st.session_state:
     st.session_state.run_animation = False
 
 # =========================================================
-# CORE DRAWING FUNCTIONS
+# DRAWING FUNCTION
 # =========================================================
 
-def draw_rmf_frame(angle_deg, arrow_density=48):
-    """
-    Combines the physical stator view and the circular flux distribution.
-    """
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
-    theta_rad = np.radians(angle_deg)
+def draw_multipole_frame(electrical_angle_deg, P):
+    fig, ax = plt.subplots(figsize=(8, 8))
+    ax.set_xlim(-1.6, 1.6)
+    ax.set_ylim(-1.6, 1.6)
+    
+    # Constants
+    elec_rad = np.radians(electrical_angle_deg)
+    pole_pairs = P / 2
+    
+    # Draw Stator and Rotor Boundaries
+    stator_outer = patches.Circle((0, 0), 1.1, fill=False, lw=4, color='#333333')
+    stator_inner = patches.Circle((0, 0), 0.9, fill=False, lw=1, color='#666666')
+    rotor_outer = patches.Circle((0, 0), 0.5, fill=True, color='#e0e0e0', zorder=0)
+    ax.add_patch(stator_outer)
+    ax.add_patch(stator_inner)
+    ax.add_patch(rotor_outer)
 
-    # --- LEFT: Physical Stator & Resultant Vector ---
-    ax1.set_xlim(-1.5, 1.5)
-    ax1.set_ylim(-1.5, 1.5)
+    # Generate Flux Arrows
+    angles = np.linspace(0, 360, arrow_density, endpoint=False)
     
-    # Stator & Rotor Circles
-    ax1.add_patch(patches.Circle((0, 0), 1.0, fill=False, lw=3, color='#333333'))
-    ax1.add_patch(patches.Circle((0, 0), 0.4, fill=True, color='#f0f0f0'))
-    
-    # Resultant RMF Vector
-    ax1.arrow(0, 0, 0.85 * np.cos(theta_rad), 0.85 * np.sin(theta_rad),
-              width=0.04, head_width=0.15, head_length=0.15, color='red', label="Resultant B")
-    
-    # N-S Labels
-    ax1.text(1.2 * np.cos(theta_rad), 1.2 * np.sin(theta_rad), "N", 
-             fontsize=20, weight='bold', color='red', ha='center', va='center')
-    ax1.text(1.2 * np.cos(theta_rad + np.pi), 1.2 * np.sin(theta_rad + np.pi), "S", 
-             fontsize=20, weight='bold', color='blue', ha='center', va='center')
-    
-    ax1.set_title(f"Space Vector Position (θ = {angle_deg % 360}°)", fontsize=14)
-    ax1.axis('off')
-
-    # --- RIGHT: Air-Gap Flux Distribution ---
-    ax2.set_xlim(-1.5, 1.5)
-    ax2.set_ylim(-1.5, 1.5)
-    
-    # Air Gap boundaries
-    ax2.add_patch(patches.Circle((0, 0), 1.0, fill=False, lw=2))
-    ax2.add_patch(patches.Circle((0, 0), 0.6, fill=False, lw=2))
-    
-    angles = np.linspace(0, 360, arrow_density)
     for ang in angles:
-        a_rad = np.radians(ang)
-        # B = Bmax * cos(theta - omega*t)
-        B = np.cos(a_rad - theta_rad)
+        mech_rad = np.radians(ang)
         
-        # Color mapping: Red for Outward (N), Blue for Inward (S)
+        # B = cos( P/2 * theta_mech - theta_electrical )
+        B = np.cos(pole_pairs * mech_rad - elec_rad)
+        
         color = 'red' if B > 0 else 'blue'
         
-        # Scale arrows
-        r_start = 0.8
-        dx = B * 0.3 * np.cos(a_rad)
-        dy = B * 0.3 * np.sin(a_rad)
+        # Arrow placement (in the air gap)
+        r_mid = 0.7
+        # Scale arrow length by flux density
+        length = B * 0.25
         
-        ax2.arrow(r_start * np.cos(a_rad), r_start * np.sin(a_rad), dx, dy,
-                  width=0.005, head_width=0.04, head_length=0.05, 
-                  fc=color, ec=color, alpha=abs(B))
+        dx = length * np.cos(mech_rad)
+        dy = length * np.sin(mech_rad)
+        
+        ax.arrow(
+            r_mid * np.cos(mech_rad), r_mid * np.sin(mech_rad),
+            dx, dy,
+            width=0.01, head_width=0.04, head_length=0.05,
+            fc=color, ec=color, alpha=max(0.2, abs(B))
+        )
 
-    ax2.set_title("Air-Gap Flux Density Distribution", fontsize=14)
-    ax2.axis('off')
-    
+    # Label Poles (N and S)
+    # Find peaks of the cosine wave
+    for i in range(int(P)):
+        # Peaks occur where (P/2 * mech - elec) = n * PI
+        peak_mech_rad = (elec_rad + i * np.pi) / pole_pairs
+        label = "N" if i % 2 == 0 else "S"
+        l_color = "red" if label == "N" else "blue"
+        
+        ax.text(
+            1.25 * np.cos(peak_mech_rad), 1.25 * np.sin(peak_mech_rad),
+            label, fontsize=16, weight='bold', color=l_color,
+            ha='center', va='center'
+        )
+
+    ax.set_title(f"{P}-Pole System | Electrical Angle: {electrical_angle_deg % 360}°", fontsize=14)
+    ax.axis('off')
     return fig
 
 # =========================================================
 # MAIN INTERFACE
 # =========================================================
 
-col_btn1, col_btn2, _ = st.columns([1, 1, 3])
-
-with col_btn1:
+col1, col2 = st.columns(2)
+with col1:
     if st.button("▶ Start Animation"):
         st.session_state.run_animation = True
-with col_btn2:
+with col2:
     if st.button("⏹ Stop Animation"):
         st.session_state.run_animation = False
 
-plot_spot = st.empty()
+placeholder = st.empty()
 
-# =========================================================
-# EXECUTION LOGIC
-# =========================================================
-
+# Animation Logic
 if st.session_state.run_animation:
-    # Loop for animation
     while st.session_state.run_animation:
-        for angle in range(0, 360, 10):
+        for angle in range(0, 360, 5):
             if not st.session_state.run_animation:
                 break
-            
-            fig = draw_rmf_frame(angle, resolution)
-            plot_spot.pyplot(fig)
+            fig = draw_multipole_frame(angle, poles)
+            placeholder.pyplot(fig)
             plt.close(fig)
             time.sleep(speed)
 else:
-    # Static view (Snapshot)
-    fig = draw_rmf_frame(0, resolution)
-    plot_spot.pyplot(fig)
+    fig = draw_multipole_frame(0, poles)
+    placeholder.pyplot(fig)
     plt.close(fig)
 
 # =========================================================
-# TECHNICAL EXPLANATION
+# INFO SECTION
 # =========================================================
-with st.expander("Show Mathematical Details"):
-    st.latex(r"B(\theta, t) = B_{max} \cos(\theta - \omega t)")
-    st.markdown("""
-    - **Red Arrows:** Represent the North pole region where flux lines leave the stator.
-    - **Blue Arrows:** Represent the South pole region where flux lines enter the stator.
-    - As time ($t$) progresses, the peak of the sinusoidal distribution shifts around the periphery at **synchronous speed**.
+with st.expander("Understanding Multi-Pole Rotation"):
+    st.markdown(f"""
+    For a **{poles}-pole** machine:
+    *   There are **{poles // 2}** pairs of North and South poles.
+    *   One electrical cycle ($360^\circ$ electrical) results in only **{360 / (poles/2):.1f}^\circ$** of mechanical rotation.
+    *   The mechanical speed $n_m$ is related to the electrical frequency $f$ by:
     """)
+    st.latex(r"n_m = \frac{120 f}{P} \text{ RPM}")
+    st.info("Notice how the red (N) and blue (S) zones stay closer together as you increase the number of poles!")
